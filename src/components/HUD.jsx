@@ -14,7 +14,7 @@ export default function HUD({
   oxygen = 100,
   water = 100,
   power = 100,
-  currentObjective = "Restore Communications",
+  currentObjective = "",
   selectedTool = "Drill",
   onSelectTool,
 }) {
@@ -45,10 +45,12 @@ export default function HUD({
         })}
       </section>
 
-      <section aria-label="Current objective" className="game-panel hud-objective">
-        <p className="game-eyebrow">CURRENT OBJECTIVE</p>
-        <p className="hud-objective__text">{currentObjective}</p>
-      </section>
+      {currentObjective && (
+        <section aria-label="Current objective" className="game-panel hud-objective">
+          <p className="game-eyebrow">CURRENT OBJECTIVE</p>
+          <p className="hud-objective__text">{currentObjective}</p>
+        </section>
+      )}
 
       <nav aria-label="Tool hotbar" className="game-panel hud-hotbar">
         {tools.map((tool, index) => (

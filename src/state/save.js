@@ -36,6 +36,8 @@ export function readSaveSlots() {
       typeof save.createdAt !== "string" ||
       typeof save.updatedAt !== "string" ||
       !["briefing", "in-progress"].includes(save.status) ||
+      (save.location !== undefined && typeof save.location !== "string") ||
+      (save.objectiveUnlocked !== undefined && typeof save.objectiveUnlocked !== "boolean") ||
       typeof save.currentObjective !== "string" ||
       typeof save.selectedTool !== "string" ||
       !Array.isArray(save.objectives) ||
@@ -52,7 +54,12 @@ export function readSaveSlots() {
       throw new Error(`Mission ${index + 1} could not be read because its save data is invalid.`);
     }
 
-    return save;
+    return {
+      ...save,
+      currentObjective: save.objectiveUnlocked ? save.currentObjective : "",
+      location: save.location || "arcadia",
+      objectiveUnlocked: save.objectiveUnlocked === true,
+    };
   });
 }
 
@@ -77,8 +84,10 @@ export function createSaveSlot(slot) {
     createdAt: timestamp,
     updatedAt: timestamp,
     status: "briefing",
+    location: "arcadia",
     selectedTool: "Drill",
-    currentObjective: "Restore Communications",
+    currentObjective: "",
+    objectiveUnlocked: false,
     objectives: defaultObjectives.map((name) => ({ name, progress: 0 })),
   };
 

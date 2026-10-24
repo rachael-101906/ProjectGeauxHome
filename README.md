@@ -1,4 +1,7 @@
 # ProjectGeauxHome
+# Project Geaux Home
+
+## Mission Briefing
 MISSION BRIEFING
 YEAR 2089
 
@@ -10,3 +13,5 @@ MISSION OBJECTIVES:
 ~ Restore Communications
 ~ Repair Ship Systems
 ~ Return to Earth
+
+You, Hugh Mann, have to complete objectives to get back to Earth.

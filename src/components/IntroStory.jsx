@@ -1,11 +1,5 @@
 import "./game-ui.css";
 
-const objectives = [
-  "Restore Communications",
-  "Repair Ship Systems",
-  "Return to Earth",
-];
-
 export default function IntroStory({ onBeginMission }) {
   return (
     <main className="game-ui-screen intro-story">
@@ -33,12 +27,8 @@ export default function IntroStory({ onBeginMission }) {
         </div>
 
         <div className="intro-story__objectives">
-          <h2 className="game-section-title">MISSION OBJECTIVES:</h2>
-          <ul>
-            {objectives.map((objective) => (
-              <li key={objective}>{objective}</li>
-            ))}
-          </ul>
+          <h2 className="game-section-title">CURRENT OBJECTIVE:</h2>
+          <p>FIND R.O.V.E.R.</p>
         </div>
 
         <button
