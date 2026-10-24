@@ -164,15 +164,18 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     const held = heldKeys.current;
 
     function onKeyDown(event) {
-      if (
-        event.key.toLowerCase() === "e" &&
-        !event.repeat &&
-        nearRoverRef.current &&
-        !blockedRef.current
-      ) {
-        event.preventDefault();
-        setRoverOpen(true);
-        return;
+      if (event.key.toLowerCase() === "e" && !event.repeat && !blockedRef.current) {
+        if (nearRoverRef.current) {
+          event.preventDefault();
+          setRoverOpen(true);
+          return;
+        }
+        const { x, y } = positionRef.current;
+        if (Math.abs(x - MINE_SPOT.x) <= MINE_REACH.x && Math.abs(y - MINE_SPOT.y) <= MINE_REACH.y) {
+          event.preventDefault();
+          mineResource();
+          return;
+        }
       }
 
       const direction = MOVE_KEYS[event.key.toLowerCase()];
@@ -262,17 +265,51 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
       }))
     : roverLine < ROVER_LAST_LINE
     ? [{ label: "CONTINUE", onClick: () => setRoverLine((line) => line + 1) }]
-    : [{ label: "CLOSE", onClick: closeRover }];
+    : [{
+        label: locationId === "arcadia" ? "LET'S RIDE TO VASTITAS" : "CHOOSE A DESTINATION",
+        onClick: () => {
+          if (locationId === "arcadia") finishRoverDialogue();
+          else { setRoverOpen(false); setTravelMenuOpen(true); }
+        },
+      }];
 
   function finishRoverDialogue() {
-    setRoverSequence(true);
-    window.setTimeout(() => setFadeToBlack(true), 1100);
+    heldKeys.current.clear();
+    setRoverOpen(false);
+    setRoverSequence(true); // Hugh hops onto the rover, then they drive off-screen together.
+    window.setTimeout(() => setFadeToBlack(true), 1500);
+    window.setTimeout(() => {
+      setLocationId("vastitas");
+      positionRef.current = { ...START_POSITION };
+      setShowTradeScreen(true);
+      setRoverSequence(false);
+      setFadeToBlack(false);
+      setShowLocationTitle(true);
+      setCharactersVisible(false);
+      onSave?.({ location: "vastitas", playerX: START_POSITION.x, playerY: START_POSITION.y });
+    }, 2700);
+  }
+
+  function chooseRoverDestination(destination) {
+    setTravelMenuOpen(false);
+    setFadeToBlack(true);
+    heldKeys.current.clear();
+    window.setTimeout(() => {
+      setLocationId(destination.id);
+      positionRef.current = { ...START_POSITION };
+      setShowTradeScreen(destination.id === "vastitas");
+      setFadeToBlack(false);
+      setShowLocationTitle(true);
+      setCharactersVisible(false);
+      onSave?.({ location: destination.id, playerX: START_POSITION.x, playerY: START_POSITION.y });
+    }, 1200);
   }
 
   function confirmTravel() {
     if (!travelTarget) return;
-    if (onSave) onSave({ location: travelTarget.id });
+    const destination = travelTarget;
     setTravelTarget(null);
+    chooseRoverDestination(destination);
   }
 
   // Handle Pause and Objectives hotkeys
