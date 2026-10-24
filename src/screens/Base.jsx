@@ -283,7 +283,8 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     window.setTimeout(() => {
       setLocationId("vastitas");
       positionRef.current = { ...START_POSITION };
-      setShowTradeScreen(true);
+      setShowTradeScreen(false);
+      window.setTimeout(() => setShowTradeScreen(true), 1700);
       setRoverSequence(false);
       setFadeToBlack(false);
       setShowLocationTitle(true);
@@ -299,7 +300,8 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     window.setTimeout(() => {
       setLocationId(destination.id);
       positionRef.current = { ...START_POSITION };
-      setShowTradeScreen(destination.id === "vastitas");
+      setShowTradeScreen(false);
+      if (destination.id === "vastitas") window.setTimeout(() => setShowTradeScreen(true), 1700);
       setFadeToBlack(false);
       setShowLocationTitle(true);
       setCharactersVisible(false);
