@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Bot } from 'lucide-react'
 
-export default function RoverDialogue({ message: messageOverride }) {
+export default function RoverDialogue({ message: messageOverride, onComplete }) {
   const text = messageOverride || 'Beep boop. R.O.V.E.R. online.'
   const [visibleText, setVisibleText] = useState('')
+  const completionRef = useRef(onComplete)
+
+  completionRef.current = onComplete
 
   useEffect(() => {
     setVisibleText('')
@@ -13,6 +16,7 @@ export default function RoverDialogue({ message: messageOverride }) {
       setVisibleText(text.slice(0, characterIndex))
       if (characterIndex >= text.length) {
         window.clearInterval(interval)
+        completionRef.current?.()
       }
     }, 24)
 

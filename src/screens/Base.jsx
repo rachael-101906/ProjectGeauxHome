@@ -10,6 +10,10 @@ import tempeTerra from "../components/assets/backgrounds/tempe-terra.png";
 import vastitasBorealis from "../components/assets/backgrounds/vastitas-borealis.png";
 import RoverDialogue from "../components/RoverDialogue.jsx";
 import { rover_dialogue } from "../data/dialogue.js";
+import hugh from "../components/assets/characters/Hugh.png";
+import hughLeftSway1 from "../components/assets/characters/HughLSway1.png";
+import hughLeftSway2 from "../components/assets/characters/HughLSway2.png";
+import rover from "../components/assets/backgrounds/rover.png";
 
 const missionObjectives = [
   { name: "Communication Array", progress: 0 },
@@ -35,6 +39,10 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
   const [travelTarget, setTravelTarget] = useState(null);
   const [roverOpen, setRoverOpen] = useState(false);
   const [playerPosition, setPlayerPosition] = useState({ x: 50, y: 72 });
+  const [playerDirection, setPlayerDirection] = useState("right");
+  const [walkingFrame, setWalkingFrame] = useState(0);
+  const [roverSequence, setRoverSequence] = useState(false);
+  const [fadeToBlack, setFadeToBlack] = useState(false);
   const locationIndex = Math.max(
     0,
     locations.findIndex((location) => location.id === (savedGame.location || "arcadia")),
@@ -73,6 +81,8 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
       const direction = directions[event.key];
       if (!direction || paused || travelTarget) return;
       event.preventDefault();
+      setPlayerDirection(direction[0] < 0 ? "left" : direction[0] > 0 ? "right" : playerDirection);
+      setWalkingFrame((frame) => (frame + 1) % 2);
       setPlayerPosition((position) => ({
         x: Math.min(94, Math.max(6, position.x + direction[0])),
         y: Math.min(88, Math.max(50, position.y + direction[1])),
@@ -82,6 +92,20 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
     window.addEventListener("keydown", handleMovement);
     return () => window.removeEventListener("keydown", handleMovement);
   }, [paused, travelTarget]);
+
+  function finishRoverDialogue() {
+    setRoverSequence(true);
+    window.setTimeout(() => setFadeToBlack(true), 1100);
+  }
+
+  const playerImage =
+    playerDirection === "right"
+      ? walkingFrame === 0
+        ? hugh
+        : hughLeftSway1
+      : walkingFrame === 0
+        ? hughLeftSway1
+        : hughLeftSway2;
 
   function confirmTravel() {
     if (!travelTarget) return;
@@ -137,12 +161,12 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
             aria-label="Hugh Mann"
             className="hugh-mann"
             role="img"
-            style={{ left: `${playerPosition.x}%`, top: `${playerPosition.y}%` }}
+            style={{
+              left: `${playerPosition.x}%`,
+              top: `${playerPosition.y}%`,
+              backgroundImage: `url("${playerImage}")`,
+            }}
           >
-            <span className="hugh-mann__head" />
-            <span className="hugh-mann__body" />
-            <span className="hugh-mann__leg hugh-mann__leg--left" />
-            <span className="hugh-mann__leg hugh-mann__leg--right" />
           </div>
         )}
       </div>
@@ -192,11 +216,22 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
             onClick={() => setRoverOpen((isOpen) => !isOpen)}
             type="button"
           >
-            R.O.V.E.R.
+            <img src={rover} alt="Talk to Rover" />
           </button>
-          {roverOpen && <RoverDialogue message={rover_dialogue[0]} />}
         </aside>
       )}
+      {roverOpen && !roverSequence && (
+        <div className="rover-conversation">
+          <RoverDialogue message={rover_dialogue[0]} onComplete={finishRoverDialogue} />
+        </div>
+      )}
+      {roverSequence && (
+        <div className="rover-escort" aria-hidden="true">
+          <img className="rover-escort__rover" src={rover} alt="" />
+          <img className="rover-escort__hugh" src={hugh} alt="" />
+        </div>
+      )}
+      <div className={`black-fade${fadeToBlack ? " black-fade--active" : ""}`} />
 
       <div className="mission-actions">
         <button
