@@ -126,7 +126,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   useEffect(() => {
     setShowLocationTitle(true);
     setCharactersVisible(false);
-    const fadeTitle = window.setTimeout(() => setShowLocationTitle(false), 1000);
+    const fadeTitle = window.setTimeout(() => setShowLocationTitle(false), 1600);
     const revealScene = window.setTimeout(() => setCharactersVisible(true), 1600);
     return () => { window.clearTimeout(fadeTitle); window.clearTimeout(revealScene); };
   }, [locationId]);
