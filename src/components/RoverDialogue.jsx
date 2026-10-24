@@ -19,7 +19,6 @@ export default function RoverDialogue({ message: messageOverride, actions = [], 
       setVisibleText(text.slice(0, characterIndex))
       if (characterIndex >= text.length) {
         window.clearInterval(interval)
-        completionRef.current?.()
       }
     }, 24)
 
