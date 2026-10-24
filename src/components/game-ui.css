@@ -1372,3 +1372,13 @@ progress::-moz-progress-bar {
 }
 .trading-post__portrait img { image-rendering: pixelated; width: 100%; }
 .t-bit { image-rendering: pixelated; vertical-align: middle; width: 18px; }
+.rover-dialogue__speaker { align-items: center; display: flex; gap: 12px; justify-content: space-between; }
+.rover-dialogue__mute {
+  background: none;
+  border: 1px solid rgba(137, 240, 255, .5);
+  color: var(--game-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 7px;
+  padding: 4px 6px;
+}
