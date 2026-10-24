@@ -1,5 +1,5 @@
-import Hugh from "./assets/characters/Hugh.png";
-import HughLeft from "./assets/characters/HughL.png";
+import HughLeft from "./assets/characters/Hugh.png";
+import HughRight from "./assets/characters/HughL.png";
 import HughWalkOne from "./assets/characters/HughLSway1.png";
 import HughWalkTwo from "./assets/characters/HughLSway2.png";
 
@@ -14,7 +14,7 @@ function getSprite(animation, direction, frame) {
   }
 
   if (direction === "left") return HughLeft;
-  return Hugh;
+  return HughRight;
 }
 
 export default function Player({
