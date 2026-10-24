@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import HUD from "../components/HUD.jsx";
 import ObjectivesMenu from "../components/ObjectivesMenu.jsx";
 import PauseMenu from "../components/PauseMenu.jsx";
+<<<<<<< HEAD
+=======
 import smoke from "../components/assets/icons/pixel-art-32x32-2f.gif";
 import spaceship from "../components/assets/backgrounds/spaceship.png";
 import arcadia from "../components/assets/backgrounds/arcadia.png";
@@ -10,6 +12,7 @@ import tempeTerra from "../components/assets/backgrounds/tempe-terra.png";
 import vastitasBorealis from "../components/assets/backgrounds/vastitas-borealis.png";
 import roverSprite from "../components/assets/backgrounds/rover.png";
 import RoverDialogue from "../components/RoverDialogue.jsx";
+<<<<<<< HEAD
 import { rover_dialogue, user_dialogue } from "../data/dialogue.js";
 
 // Movement tuning: percent of the screen crossed per second.
@@ -43,6 +46,10 @@ const MOVE_KEYS = {
 //   user_dialogue[1]   "Goodbye."    -> closes the conversation
 const ROVER_ASK_NAME = 0;
 const ROVER_LAST_LINE = rover_dialogue.length - 1;
+=======
+import { rover_dialogue } from "../data/dialogue.js";
+>>>>>>> 1fd34968d71b6952e5148bc9e24c0efbaa02ff1e
+>>>>>>> origin/main
 
 const missionObjectives = [
   { name: "Communication Array", progress: 0 },
@@ -243,6 +250,16 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
 
   return (
     <main className="mission-screen">
+<<<<<<< HEAD
+      <LocationWorld
+        key={savedGame.currentLocation || "Arcadia Planitia"}
+        location={savedGame.currentLocation || "Arcadia Planitia"}
+        onInteract={interact}
+        onSelectTool={setSelectedTool}
+        paused={worldPaused}
+        selectedTool={selectedTool}
+      />
+=======
       <div
         aria-hidden="true"
         className="mission-landscape mission-landscape--image"
@@ -269,6 +286,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
           </div>
         )}
       </div>
+>>>>>>> 1fd34968d71b6952e5148bc9e24c0efbaa02ff1e
 
       {currentLocation.id === "arcadia" && (
         <button

@@ -340,6 +340,27 @@ progress::-moz-progress-bar {
   margin-bottom: 3px;
 }
 
+.hud-health-art {
+  background: #f2e7c9;
+  border: 1px solid #071018;
+  height: 32px;
+  overflow: hidden;
+  position: relative;
+  width: 168px;
+}
+
+.hud-health-art img {
+  height: 180px;
+  image-rendering: pixelated;
+  left: 50%;
+  mix-blend-mode: multiply;
+  object-fit: cover;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 320px;
+}
+
 .hud-objective {
   padding: 18px 20px;
   right: 24px;
