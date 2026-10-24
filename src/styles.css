@@ -25,10 +25,21 @@ body {
   align-items: center;
 }
 
-.logo {
-  width: 700px;
-  max-width: 80%;
+.logo-frame {
+  position: relative;
+  width: min(80vw, 471px);
+  aspect-ratio: 471 / 222;
   margin-bottom: 50px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.logo {
+  position: absolute;
+  top: -29.25%;
+  left: -24.31%;
+  width: 148.62%;
+  max-width: none;
 }
 
 .menu-buttons {

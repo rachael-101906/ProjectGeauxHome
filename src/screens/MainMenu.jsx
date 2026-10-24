@@ -5,7 +5,7 @@ import React from "react";
 import background from "../components/assets/backgrounds/Project Geaux Home.png";
 import logo from "../components/assets/logos/project geaux home main logo.png";
 
-export default function MainMenu() {
+export default function MainMenu({ onStartGame }) {
   return (
     <div
       className="main-menu"
@@ -13,14 +13,16 @@ export default function MainMenu() {
         backgroundImage: `url(${background})`,
       }}
     >
-      <img
-        src={logo}
-        alt="Project Geaux Home"
-        className="logo"
-      />
+      <div className="logo-frame">
+        <img
+          src={logo}
+          alt="Project Geaux Home"
+          className="logo"
+        />
+      </div>
 
       <div className="menu-buttons">
-        <button className="menu-button">
+        <button className="menu-button" onClick={onStartGame}>
           START GAME
         </button>
 

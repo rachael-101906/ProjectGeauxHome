@@ -1,6 +1,6 @@
 // src/screens/SaveSelect.jsx
 
-export default function SaveSelect() {
+export default function SaveSelect({ onBack }) {
   return (
     <div className="save-select">
 
@@ -42,7 +42,7 @@ export default function SaveSelect() {
 
       </div>
 
-      <button className="back-btn">
+      <button className="back-btn" onClick={onBack}>
         BACK
       </button>
 
