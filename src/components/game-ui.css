@@ -511,18 +511,29 @@ progress::-moz-progress-bar {
   z-index: 1;
 }
 
+@keyframes ship-smoke-rise {
+  from { opacity: 1; translate: 0 0; }
+  to   { opacity: 0.15; translate: 6px -26px; }
+}
+
 .mission-ship-smoke {
-  bottom: 61%;
-  left: 12%;
-  mix-blend-mode: screen;
+  animation: ship-smoke-rise 2.4s steps(8, end) infinite;
+  /* Tweak these three to move or resize the smoke coming off the ship.
+     It sits just above the damaged left engine and rises from there. */
+  --smoke-left: 10%;
+  --smoke-bottom: 66%;
+  --smoke-size: clamp(36px, 5vw, 68px);
+
+  bottom: var(--smoke-bottom);
+  left: var(--smoke-left);
   position: absolute;
-  width: clamp(34px, 5vw, 72px);
+  width: var(--smoke-size);
   z-index: 2;
 }
 
 .rover-tab {
   bottom: 112px;
-  left: 16px;
+  right: 16px;
   max-width: min(360px, calc(100vw - 32px));
   position: absolute;
   z-index: 13;
@@ -545,16 +556,127 @@ progress::-moz-progress-bar {
   outline-offset: 2px;
 }
 
+/* The R.O.V.E.R. button stays put; the dialogue opens above it, under the rover. */
+.rover-tab {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+}
+
 .rover-tab .rover-dialogue {
-  background: rgba(7, 16, 24, 0.78);
-  margin-top: 6px;
+  align-items: flex-start;
+  background: rgba(7, 16, 24, 0.94);
+  border: 2px solid var(--game-cyan);
+  color: var(--game-cream);
+  display: flex;
+  font-family: "Press Start 2P", cursive;
+  gap: 10px;
+  margin-bottom: 6px;
+  padding: 12px;
+  width: min(340px, calc(100vw - 32px));
+}
+
+.rover-dialogue > svg {
+  color: var(--game-cyan);
+  flex: none;
+}
+
+.rover-dialogue .text-xs {
+  color: var(--game-cyan);
+  font-size: 7px;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+
+.rover-dialogue__text {
+  font-size: 8px;
+  line-height: 1.9;
+}
+
+.rover-dialogue__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.rover-dialogue__choice {
+  background: rgba(7, 16, 24, 0.9);
+  border: 1px solid rgba(137, 240, 255, 0.7);
+  color: var(--game-cyan);
+  cursor: pointer;
+  font: inherit;
+  font-size: 8px;
+  line-height: 1.6;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.rover-dialogue__choice:hover,
+.rover-dialogue__choice:focus-visible {
+  background: rgba(137, 240, 255, 0.16);
+  color: var(--game-cream);
+  outline: 2px solid var(--game-cream);
+  outline-offset: 2px;
+}
+
+/* R.O.V.E.R. stands on the right side. rover.png is a full 1920x1080 canvas
+   with the rover in the middle, so the image is cropped to just the rover. */
+.rover-npc {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  position: absolute;
+  transform: translate(-50%, -100%);
+  width: clamp(84px, 9vw, 128px);
+  z-index: 4;
+}
+
+.rover-npc__art {
+  aspect-ratio: 670 / 500;
+  display: block;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.rover-npc__art img {
+  height: auto;
+  image-rendering: pixelated;
+  left: -111.94%;
+  max-width: none;
+  pointer-events: none;
+  position: absolute;
+  top: -68%;
+  width: 286.57%;
+}
+
+.rover-npc:hover,
+.rover-npc:focus-visible {
+  filter: drop-shadow(0 0 6px rgba(137, 240, 255, 0.8));
+  outline: none;
+}
+
+.rover-npc__prompt {
+  background: rgba(7, 16, 24, 0.92);
+  border: 1px solid var(--game-cyan);
+  color: var(--game-cream);
+  font-family: "Press Start 2P", cursive;
+  font-size: 7px;
+  left: 50%;
+  line-height: 1.6;
+  padding: 6px 8px;
+  position: absolute;
+  top: -22px;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
 
 .hugh-mann {
   height: 76px;
   position: absolute;
   transform: translate(-50%, -100%);
-  transition: left 90ms steps(2, end), top 90ms steps(2, end);
   width: 38px;
   z-index: 4;
 }
@@ -591,6 +713,23 @@ progress::-moz-progress-bar {
   height: 24px;
   top: 50px;
   width: 10px;
+}
+
+.hugh-mann[data-walking] {
+  animation: hugh-mann-bob 0.3s steps(2, end) infinite;
+}
+
+@keyframes hugh-mann-bob {
+  50% {
+    translate: 0 -3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hugh-mann[data-walking],
+  .mission-ship-smoke {
+    animation: none;
+  }
 }
 
 .hugh-mann__leg--left { left: 7px; }
