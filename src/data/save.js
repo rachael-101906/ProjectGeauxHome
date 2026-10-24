@@ -37,6 +37,8 @@ export function readSaveSlots() {
       typeof save.updatedAt !== "string" ||
       !["briefing", "in-progress"].includes(save.status) ||
       typeof save.currentObjective !== "string" ||
+      (save.currentLocation !== undefined &&
+        typeof save.currentLocation !== "string") ||
       typeof save.selectedTool !== "string" ||
       !Array.isArray(save.objectives) ||
       !save.objectives.every(
@@ -52,7 +54,10 @@ export function readSaveSlots() {
       throw new Error(`Mission ${index + 1} could not be read because its save data is invalid.`);
     }
 
-    return save;
+    return {
+      ...save,
+      currentLocation: save.currentLocation || "Arcadia Planitia",
+    };
   });
 }
 
@@ -77,6 +82,7 @@ export function createSaveSlot(slot) {
     createdAt: timestamp,
     updatedAt: timestamp,
     status: "briefing",
+    currentLocation: "Arcadia Planitia",
     selectedTool: "Drill",
     currentObjective: "Restore Communications",
     objectives: defaultObjectives.map((name) => ({ name, progress: 0 })),

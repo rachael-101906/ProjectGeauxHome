@@ -10,7 +10,13 @@ const missionObjectives = [
   { name: "Propulsion Engine", progress: 0 },
 ];
 
-export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
+export default function Base({
+  onMainMenu,
+  onSave,
+  onTravel,
+  saveError,
+  savedGame,
+}) {
   const [objectivesOpen, setObjectivesOpen] = useState(false);
   const [paused, setPaused] = useState(false);
   const [pauseNotice, setPauseNotice] = useState("");
@@ -19,12 +25,8 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
   );
 
   useEffect(() => {
-    onSave({
-      selectedTool,
-      currentObjective: savedGame.currentObjective,
-      objectives: savedGame.objectives,
-    });
-  }, [onSave, savedGame.currentObjective, savedGame.objectives, selectedTool]);
+    onSave({ selectedTool });
+  }, [onSave, selectedTool]);
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -67,8 +69,8 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
 
       <header className="mission-location">
         <p className="game-eyebrow">PROJECT GEAUX HOME // MISSION 01</p>
-        <h1>ARCADIA PLANITIA</h1>
-        <p>CRASH SITE // SECTOR 01</p>
+        <h1>{savedGame.currentLocation || "Arcadia Planitia"}</h1>
+        <p>MARS SURFACE // EXPEDITION ACTIVE</p>
       </header>
 
       {saveError && (
@@ -84,6 +86,13 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
       />
 
       <div className="mission-actions">
+        <button
+          className="game-button"
+          onClick={onTravel}
+          type="button"
+        >
+          LOCATIONS
+        </button>
         <button
           className="game-button"
           onClick={() => !paused && setObjectivesOpen(true)}
