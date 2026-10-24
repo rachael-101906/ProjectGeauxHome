@@ -1,5 +1,7 @@
 // src/screens/SaveSelect.jsx
 
+import homeBackground from "../components/assets/backgrounds/home-page.png";
+
 export default function SaveSelect({
   onBack,
   onContinue,
@@ -8,7 +10,10 @@ export default function SaveSelect({
   saveSlots = [null, null, null],
 }) {
   return (
-    <div className="save-select">
+    <div
+      className="save-select"
+      style={{ backgroundImage: `url("${homeBackground}")` }}
+    >
 
       <h1 className="save-title">
         MISSION TERMINAL

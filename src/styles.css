@@ -92,17 +92,21 @@ body {
 }
 
 .main-menu {
+  position: relative;
   width: 100vw;
   height: 100vh;
 
-  background-size: cover;
+  background-color: #071018;
   background-position: center;
   background-repeat: no-repeat;
+  background-size: cover;
 
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  isolation: isolate;
+  overflow: hidden;
 }
 
 .logo-frame {
@@ -123,6 +127,8 @@ body {
 }
 
 .menu-buttons {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -155,13 +161,90 @@ body {
 
   transform: scale(1.05);
 }
+
+.menu-info {
+  align-items: center;
+  background: rgba(2, 8, 13, 0.78);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 20px;
+  position: fixed;
+  z-index: 10;
+}
+
+.menu-info__panel {
+  background: rgba(7, 16, 24, 0.98);
+  border: 4px solid #89f0ff;
+  box-shadow: 0 0 24px rgba(137, 240, 255, 0.3);
+  max-width: 520px;
+  padding: 34px;
+  text-align: center;
+  width: 100%;
+}
+
+.menu-info__panel h2 {
+  color: #89f0ff;
+  font-size: 18px;
+  line-height: 1.8;
+}
+
+.menu-info__panel p {
+  color: #f2e7c9;
+  font-size: 10px;
+  line-height: 2;
+  margin-top: 24px;
+}
+
+.menu-info__close {
+  display: block;
+  margin: 28px auto 0;
+  width: min(220px, 100%);
+}
+
+.rover-dialogue {
+  animation: rover-dialogue-popup 280ms steps(4, end) both;
+}
+
+.rover-dialogue__text {
+  line-height: 1.8;
+}
+
+.rover-dialogue__cursor {
+  animation: rover-dialogue-cursor 700ms steps(2, end) infinite;
+  color: #89f0ff;
+}
+
+@keyframes rover-dialogue-popup {
+  from {
+    clip-path: inset(50% 0 50% 0);
+    opacity: 0;
+    transform: scaleY(0.2);
+  }
+  to {
+    clip-path: inset(0);
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes rover-dialogue-cursor {
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .main-menu__vehicle,
+  .rover-dialogue,
+  .rover-dialogue__text {
+    animation: none;
+  }
+}
 .save-select {
   width: 100vw;
   height: 100vh;
 
   position: relative;
 
-  background-image: url("./components/assets/backgrounds/Project Geaux Home.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
