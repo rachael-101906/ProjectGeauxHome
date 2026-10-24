@@ -17,12 +17,14 @@ export default function IntroStory({ onBeginMission }) {
           <p>
             YOUR TRANSPORT HAS CRASHED
             <br />
-            IN ARCADIA PLANITIA.
+            ON THE PLANET MARS, IN THE DESRT REGION OF ARCADIA PLANITIA.
           </p>
           <p>
-            LIFE SUPPORT SYSTEMS
+            YOUR LIFE SUPPORT SYSTEMS
             <br />
-            ARE FAILING.
+            ARE DAMAGED, YOUR COMMS ARE BUSTED, AND YOUR SHIP IS IN TATTERS. 
+            <br />
+            WILL YOU BE ABLE TO GEAUX HOME?
           </p>
         </div>
 

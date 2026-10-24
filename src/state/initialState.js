@@ -9,7 +9,7 @@ const initialState = {
         flags: {}, 
         tintinas: 0,
         inventory: { ice: 0, iron: 0, silica: 0, sulfur: 0, basalt: 0 },
-        gear: { pickaxe: 1, blaster: 0, hasFilter: false },
+        gear: { drill: 1, blaster: 0, hasFilter: false },
         mining: { oreHealth: {} },
         upgrades: { comm: 0, life: 0, fusion: 0, propulsion: 0 }
     }

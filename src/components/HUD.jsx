@@ -1,33 +1,21 @@
 import "./game-ui.css";
-<<<<<<< HEAD
 import CurrentObjective from "./CurrentObjective.jsx";
-import healthCritical from "./assets/icons/15.png";
-import healthLow from "./assets/icons/17.png";
-import healthGood from "./assets/icons/16.png";
-import healthFull from "./assets/icons/18.png";
-=======
->>>>>>> 1fd34968d71b6952e5148bc9e24c0efbaa02ff1e
-
-const resources = [
-  { key: "health", label: "HEALTH", value: 100 },
-  { key: "oxygen", label: "OXYGEN", value: 100 },
-  { key: "water", label: "WATER", value: 100 },
-  { key: "power", label: "POWER", value: 100 },
-];
-
-const tools = ["Drill", "Blaster", "Repair Tool"];
+import healthCritical from "./assets/icons/third-health.png";
+import healthLow from "./assets/icons/half-health.png";
+import healthGood from "./assets/icons/threequarter-health.png";
+import healthFull from "./assets/icons/full-health.png";
 
 export default function HUD({
   health = 100,
-  oxygen = 100,
-  water = 100,
-  power = 100,
   currentObjective = "",
   selectedTool = "Drill",
   onSelectTool,
 }) {
-  const values = { health, oxygen, water, power };
-  const normalizedHealth = Math.min(100, Math.max(0, Number(health) || 0));
+  const normalizedHealth = Math.min(
+    100,
+    Math.max(0, Number(health) || 0)
+  );
+
   const healthImage =
     normalizedHealth >= 87.5
       ? healthFull
@@ -37,56 +25,52 @@ export default function HUD({
           ? healthLow
           : healthCritical;
 
+  const tools = ["Drill", "Blaster", "Repair Tool"];
+
   return (
     <div className="game-hud">
-      <section aria-label="Suit status" className="game-panel hud-status">
-        <p className="game-eyebrow">SUIT STATUS</p>
-        {resources.map((resource) => {
-          const value = Math.min(100, Math.max(0, Number(values[resource.key]) || 0));
+      {/* HEALTH BAR */}
+      <section aria-label="Suit health" className="game-panel hud-status">
+        <p className="game-eyebrow">HEALTH</p>
 
-          return (
-            <div className="hud-meter" key={resource.key}>
-              <div className="hud-meter__heading">
-                <span>{resource.label}</span>
-                <span>{value}%</span>
-              </div>
-              {resource.key === "health" ? (
-                <div
-                  aria-label={`${resource.label}: ${value}%`}
-                  aria-valuemax="100"
-                  aria-valuemin="0"
-                  aria-valuenow={value}
-                  className="hud-health-art"
-                  role="progressbar"
-                >
-                  <img alt="" src={healthImage} />
-                </div>
-              ) : (
-                <progress
-                  aria-label={`${resource.label}: ${value}%`}
-                  max="100"
-                  value={value}
-                >
-                  {value}%
-                </progress>
-              )}
-            </div>
-          );
-        })}
+        <div className="hud-meter">
+          <div className="hud-meter__heading">
+            <span>Health</span>
+            <span>{normalizedHealth}%</span>
+          </div>
+
+          <div
+            aria-label={`Health: ${normalizedHealth}%`}
+            aria-valuemax="100"
+            aria-valuemin="0"
+            aria-valuenow={normalizedHealth}
+            className="hud-health-art"
+            role="progressbar"
+          >
+            <img alt="" src={healthImage} />
+          </div>
+        </div>
       </section>
 
+      {/* CURRENT OBJECTIVE */}
       {currentObjective && (
-        <section aria-label="Current objective" className="game-panel hud-objective">
+        <section
+          aria-label="Current objective"
+          className="game-panel hud-objective"
+        >
           <p className="game-eyebrow">CURRENT OBJECTIVE</p>
           <p className="hud-objective__text">{currentObjective}</p>
         </section>
       )}
 
+      {/* TOOL HOTBAR */}
       <nav aria-label="Tool hotbar" className="game-panel hud-hotbar">
         {tools.map((tool, index) => (
           <button
             aria-pressed={selectedTool === tool}
-            className={`hud-tool${selectedTool === tool ? " is-selected" : ""}`}
+            className={`hud-tool${
+              selectedTool === tool ? " is-selected" : ""
+            }`}
             key={tool}
             onClick={() => onSelectTool?.(tool)}
             type="button"

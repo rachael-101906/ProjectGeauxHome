@@ -35,7 +35,7 @@ export default function MineScreen() {
                 </span>
               </span>
               <span className="text-xs text-orange-200/80">
-                {blocker ?? `+${game.gear.pickaxe} per click`}
+                {blocker ?? `+${game.gear.drill} per click`}
               </span>
             </button>
           )

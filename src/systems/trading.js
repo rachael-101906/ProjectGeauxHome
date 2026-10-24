@@ -31,9 +31,9 @@ export function gearBlocker(game, itemId) {
   const item = SHOP_BY_ID[itemId]
   if (!item) return 'Unknown item.'
 
-  if (item.kind === 'pickaxe') {
-    if (game.gear.pickaxe >= item.tier) return 'Owned'
-    if (item.tier !== game.gear.pickaxe + 1) return `Buy T${item.tier - 1} Pickaxe first.`
+  if (item.kind === 'drill') {
+    if (game.gear.drill >= item.tier) return 'Owned'
+    if (item.tier !== game.gear.drill + 1) return `Buy T${item.tier - 1} Drill first.`
   }
   if (item.kind === 'blaster') {
     if (game.gear.blaster >= item.tier) return 'Owned'
@@ -53,7 +53,7 @@ export function buyGear(game, itemId) {
 
   const item = SHOP_BY_ID[itemId]
   const gear = { ...game.gear }
-  if (item.kind === 'pickaxe') gear.pickaxe = item.tier
+  if (item.kind === 'drill') gear.drill = item.tier
   if (item.kind === 'blaster') gear.blaster = item.tier
   if (item.kind === 'filter') gear.hasFilter = true
 

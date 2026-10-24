@@ -4,12 +4,14 @@ import { Bot } from 'lucide-react'
 // Typewriter dialogue box. Optional `actions` ([{ label, onClick }]) are shown
 // as buttons once the line has finished typing. Keyboard: 1-9 pick an action,
 // E / Enter picks the only action, or skips the typing if it is still going.
-export default function RoverDialogue({ message: messageOverride, actions = [] }) {
-  const text = messageOverride || 'Beep boop. R.O.V.E.R. online.'
+export default function RoverDialogue({ message: messageOverride, actions = [], onComplete }) {  const text = messageOverride || 'Beep boop. R.O.V.E.R. online.'
   const [visibleText, setVisibleText] = useState('')
   const done = visibleText.length >= text.length
 
   const finishTyping = useRef(() => {})
+
+  const completionRef = useRef(onComplete)
+  completionRef.current = onComplete
 
   useEffect(() => {
     setVisibleText('')

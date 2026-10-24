@@ -1,4 +1,4 @@
-// martian ore prices - sell 
+// martian ore prices - sell in Tintinas
 
 const sellOres = {
     ice: 5,

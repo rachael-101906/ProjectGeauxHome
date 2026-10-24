@@ -47,7 +47,7 @@ export default function usePlayerController({
         event.preventDefault();
         pressedKeys.current.add(key);
       } else if (key === "1" || key === "2") {
-        toolHandler.current?.(key === "1" ? "Pickaxe" : "Blaster");
+        toolHandler.current?.(key === "1" ? "Drill" : "Blaster");
       }
     }
 

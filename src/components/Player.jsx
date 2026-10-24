@@ -4,7 +4,7 @@ import HughWalkOne from "./assets/characters/HughLSway1.png";
 import HughWalkTwo from "./assets/characters/HughLSway2.png";
 
 const equipmentLabels = {
-  Pickaxe: "PICKAXE",
+  Drill: "DRILL",
   Blaster: "BLASTER",
 };
 
@@ -20,7 +20,7 @@ function getSprite(animation, direction, frame) {
 export default function Player({
   animation = "idle_down",
   direction = "down",
-  equippedItem = "Pickaxe",
+  equippedItem = "Drill",
   frame = 0,
 }) {
   const isWalking = animation.startsWith("walk_");
@@ -42,7 +42,7 @@ export default function Player({
         src={getSprite(animation, direction, frame)}
       />
       <span aria-hidden="true" className="location-player__equipment">
-        {equipmentLabels[equippedItem] ?? "PICKAXE"}
+        {equipmentLabels[equippedItem] ?? "DRILL"}
       </span>
       {(isMining || isShooting) && (
         <span aria-hidden="true" className="location-player__action">

@@ -29,7 +29,7 @@ export default function Inventory() {
       <div>
         <h3 className="mb-2 text-xs uppercase tracking-widest text-orange-300/70">Gear</h3>
         <ul className="space-y-1 text-sm">
-          <li className="flex items-center gap-2"><Pickaxe size={16} /> T{gear.pickaxe} Pickaxe</li>
+          <li className="flex items-center gap-2"><Pickaxe size={16} /> T{gear.drill} Drill</li>
           <li className="flex items-center gap-2">
             <Crosshair size={16} /> {gear.blaster ? `T${gear.blaster} Blaster` : 'No blaster'}
           </li>

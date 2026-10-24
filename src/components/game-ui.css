@@ -315,17 +315,30 @@ progress::-moz-progress-bar {
   position: absolute;
 }
 
+/* Compact, retro health panel */
 .hud-status {
-  background: rgba(7, 16, 24, 0.68);
+  background: #171b20;
+  border: 2px solid #a96845;
+  box-shadow: 3px 3px 0 #090d12;
+  box-sizing: border-box;
   left: 12px;
   padding: 8px;
   top: 12px;
-  width: min(154px, calc(100vw - 24px));
+  width: min(150px, calc(100vw - 24px));
+}
+
+.hud-status::before,
+.hud-status::after {
+  border-color: #d6a276;
+  height: 5px;
+  width: 5px;
 }
 
 .hud-status > .game-eyebrow {
-  font-size: 7px;
-  margin-bottom: 8px;
+  color: #d6a276;
+  font-size: 6px;
+  letter-spacing: 0.04em;
+  margin-bottom: 5px;
 }
 
 .hud-meter + .hud-meter {
@@ -333,32 +346,32 @@ progress::-moz-progress-bar {
 }
 
 .hud-meter__heading {
-  color: var(--game-cream);
+  color: #e4d5b8;
   display: flex;
   font-size: 6px;
   justify-content: space-between;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
 
 .hud-health-art {
-  background: #f2e7c9;
-  border: 1px solid #071018;
-  height: 32px;
+  background: #29232b;
+  border: 2px solid #684532;
+  box-sizing: border-box;
+  height: 19px;
   overflow: hidden;
   position: relative;
-  width: 168px;
+  width: 100%;
 }
 
 .hud-health-art img {
-  height: 180px;
+  height: 112px;
   image-rendering: pixelated;
   left: 50%;
-  mix-blend-mode: multiply;
   object-fit: cover;
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 320px;
+  width: 200px;
 }
 
 .hud-objective {
@@ -579,6 +592,12 @@ progress::-moz-progress-bar {
   width: min(340px, calc(100vw - 32px));
 }
 
+.rover-dialogue-panel .rover-dialogue {
+  background: rgba(0, 0, 0, 0.94);
+  border-color: var(--game-cyan);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.7);
+}
+
 .rover-dialogue > svg {
   color: var(--game-cyan);
   flex: none;
@@ -680,11 +699,11 @@ progress::-moz-progress-bar {
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
-  height: 110px;
+  height: 128px;
   image-rendering: pixelated;
   position: absolute;
   transform: translate(-50%, -100%);
-  width: 38px;
+  width: 44px;
   z-index: 4;
 }
 
@@ -1009,10 +1028,10 @@ progress::-moz-progress-bar {
   }
 
   .hud-status {
-    left: 12px;
-    padding: 14px;
-    top: 12px;
-    width: min(210px, calc(52vw - 18px));
+    left: 8px;
+    padding: 7px;
+    top: 8px;
+    width: min(150px, calc(52vw - 12px));
   }
 
   .hud-objective {
@@ -1054,5 +1073,155 @@ progress::-moz-progress-bar {
   .mission-actions .game-button {
     font-size: 7px;
     padding: 6px;
+  }
+}
+
+/* --------------------------------------------------
+   Mining, location title cards, and R.O.V.E.R. ride
+   -------------------------------------------------- */
+
+/* Show each location name briefly, then reveal the characters. */
+.mission-location.location-title-splash {
+  animation: location-title-fade 1s ease-in-out forwards;
+  pointer-events: none;
+  z-index: 100;
+}
+
+@keyframes location-title-fade {
+  0%, 55% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Simple sharp-edged ore deposit, styled to fit the pixel-art world. */
+.mine-node {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #f2e7c9;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  font-family: "Press Start 2P", cursive;
+  image-rendering: pixelated;
+}
+
+.mine-node__rock {
+  background: #8c6b5a;
+  border: 2px solid #4c3b38;
+  box-shadow: 4px 0 0 #6e5148, -3px 3px 0 #6e5148;
+  clip-path: polygon(12% 44%, 30% 12%, 62% 0, 88% 24%, 100% 62%, 76% 92%, 35% 100%, 0 72%);
+  display: block;
+  height: 29px;
+  width: 36px;
+}
+
+.mine-node__label {
+  background: rgba(20, 19, 24, 0.88);
+  border: 1px solid #a96845;
+  color: #e5bd91;
+  font-size: 7px;
+  line-height: 1.5;
+  padding: 4px 5px;
+  white-space: nowrap;
+}
+
+.mine-node:hover .mine-node__rock,
+.mine-node:focus-visible .mine-node__rock {
+  background: #b78b68;
+}
+
+.mine-node:focus-visible {
+  outline: 2px solid #e5bd91;
+  outline-offset: 3px;
+}
+
+.ore-counter,
+.mining-notice {
+  background: rgba(20, 19, 24, 0.92);
+  border: 2px solid #a96845;
+  color: #e5bd91;
+  font-family: "Press Start 2P", cursive;
+  font-size: 8px;
+  line-height: 1.7;
+  padding: 8px 10px;
+  position: absolute;
+  z-index: 30;
+}
+
+.ore-counter {
+  bottom: 12px;
+  left: 12px;
+}
+
+.mining-notice {
+  bottom: 58px;
+  left: 12px;
+  max-width: calc(100vw - 24px);
+}
+
+/* Cutscene: Hugh rides on R.O.V.E.R. and they leave the scene together. */
+.rover-ride-cutscene {
+  animation: rover-ride-away 2.2s linear forwards;
+  bottom: 19%;
+  height: 150px;
+  left: -250px;
+  pointer-events: none;
+  position: absolute;
+  width: 230px;
+  z-index: 80;
+}
+
+.rover-ride-cutscene__rover {
+  aspect-ratio: 670 / 500;
+  bottom: 0;
+  display: block;
+  left: 0;
+  overflow: hidden;
+  position: absolute;
+  width: 230px;
+}
+
+.rover-ride-cutscene__rover img {
+  height: auto;
+  image-rendering: pixelated;
+  left: -111.94%;
+  max-width: none;
+  pointer-events: none;
+  position: absolute;
+  top: -68%;
+  width: 286.57%;
+}
+
+.rover-ride-cutscene__hugh {
+  bottom: 43%;
+  height: 76px;
+  image-rendering: pixelated;
+  left: 46%;
+  object-fit: contain;
+  position: absolute;
+  width: 40px;
+  z-index: 2;
+}
+
+@keyframes rover-ride-away {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(100vw + 520px)); }
+}
+
+@media (max-width: 640px) {
+  .ore-counter,
+  .mining-notice {
+    font-size: 7px;
+    padding: 6px 7px;
+  }
+
+  .rover-ride-cutscene {
+    bottom: 22%;
+    transform-origin: bottom left;
   }
 }

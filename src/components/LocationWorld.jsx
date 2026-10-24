@@ -189,7 +189,7 @@ export default function LocationWorld({
       )}
 
       <div aria-label="Equipment hotbar" className="player-hotbar">
-        {["Pickaxe", "Blaster"].map((tool, index) => (
+        {["Drill", "Blaster"].map((tool, index) => (
           <button
             aria-pressed={selectedTool === tool}
             className={`player-hotbar__slot${selectedTool === tool ? " is-selected" : ""}`}
@@ -204,7 +204,7 @@ export default function LocationWorld({
       </div>
 
       <p aria-live="polite" className="location-game__controls">
-        WASD MOVE <span aria-hidden="true">·</span> 1 PICKAXE{" "}
+        WASD MOVE <span aria-hidden="true">·</span> 1 DRILL{" "}
         <span aria-hidden="true">·</span> 2 BLASTER{" "}
         <span aria-hidden="true">·</span> E INTERACT
       </p>

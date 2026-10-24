@@ -1,12 +1,12 @@
-import arcadiaBackground from "../components/assets/backgrounds/6.png";
-import albaBackground from "../components/assets/backgrounds/9.png";
-import tempeBackground from "../components/assets/backgrounds/11.png";
-import vastitasBackground from "../components/assets/backgrounds/7.png";
-import olympusBackground from "../components/assets/backgrounds/10.png";
-import roverDecoration from "../components/assets/decorations/12.png";
-import shipDecoration from "../components/assets/decorations/13.png";
-import habitatDecoration from "../components/assets/decorations/14.png";
-import crashFireDecoration from "../components/assets/decorations/19.png";
+import arcadiaBackground from "../components/assets/backgrounds/arcadia.png";
+import albaBackground from "../components/assets/backgrounds/alba-mons.png";
+import tempeBackground from "../components/assets/backgrounds/tempe-terra.png";
+import vastitasBackground from "../components/assets/backgrounds/vastitas-borealis.png";
+import olympusBackground from "../components/assets/backgrounds/olympus-boss.png";
+import roverDecoration from "../components/assets/characters/rover.png";
+import shipDecoration from "../components/assets/icons/spaceship.png";
+import habitatDecoration from "../components/assets/backgrounds/arcadia.png";
+import crashFireDecoration from "../components/assets/icons/fireball.png";
 
 const locations = [
   {
@@ -36,7 +36,7 @@ const locations = [
     interactables: [
       { id: "habitat-power", name: "Habitat Power", type: "habitat", x: 1000, y: 900 },
     ],
-    enemySpawnPoints: [{ id: "beta-1", enemy: "Beta-Zero", x: 1950, y: 700 }],
+    enemySpawnPoints: [{ id: "beta-1", enemy: "Beta-Zeno", x: 1950, y: 700 }],
   },
   {
     id: "alba-mons",
@@ -58,8 +58,8 @@ const locations = [
     ],
     interactables: [],
     enemySpawnPoints: [
-      { id: "beta-1", enemy: "Beta-Zero", x: 1950, y: 700 },
-      { id: "alpha-1", enemy: "Alpha-Zero", x: 600, y: 1170 },
+      { id: "beta-1", enemy: "Beta-Zeno", x: 1950, y: 700 },
+      { id: "alpha-1", enemy: "Alpha-Zeno", x: 600, y: 1170 },
     ],
   },
   {
@@ -78,7 +78,7 @@ const locations = [
     ],
     npcs: [{ id: "rover", name: "R.O.V.E.R.", x: 1300, y: 900 }],
     interactables: [],
-    enemySpawnPoints: [{ id: "alpha-1", enemy: "Alpha-Zero", x: 1950, y: 700 }],
+    enemySpawnPoints: [{ id: "alpha-1", enemy: "Alpha-Zeno", x: 1950, y: 700 }],
   },
   {
     id: "vastitas-borealis",
@@ -100,7 +100,7 @@ const locations = [
       { id: "rover", name: "R.O.V.E.R.", x: 1300, y: 900 },
     ],
     interactables: [],
-    enemySpawnPoints: [{ id: "beta-1", enemy: "Beta-Zero", x: 1950, y: 700 }],
+    enemySpawnPoints: [{ id: "beta-1", enemy: "Beta-Zeno", x: 1950, y: 700 }],
   },
   {
     id: "olympus-mons",
@@ -119,8 +119,8 @@ const locations = [
     npcs: [{ id: "rover", name: "R.O.V.E.R.", x: 1300, y: 900 }],
     interactables: [],
     enemySpawnPoints: [
-      { id: "alpha-1", enemy: "Alpha-Zero", x: 1950, y: 700 },
-      { id: "alpha-plus-1", enemy: "Alpha+ Zero", x: 600, y: 1170 },
+      { id: "alpha-1", enemy: "Alpha-Zeno", x: 1950, y: 700 },
+      { id: "alpha-plus-1", enemy: "Alpha+ Zeno", x: 600, y: 1170 },
     ],
   },
 ];
