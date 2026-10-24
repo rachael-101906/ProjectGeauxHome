@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import HUD from "../components/HUD.jsx";
 import ObjectivesMenu from "../components/ObjectivesMenu.jsx";
 import PauseMenu from "../components/PauseMenu.jsx";
+import PlayerStage from "../components/PlayerStage.jsx";
 
 const missionObjectives = [
   { name: "Communication Array", progress: 0 },
@@ -66,6 +67,8 @@ export default function Base({
         <div className="mission-ridge mission-ridge--near" />
         <div className="mission-ground" />
       </div>
+
+      <PlayerStage active={!paused && !objectivesOpen} onTravel={onTravel} />
 
       <header className="mission-location">
         <p className="game-eyebrow">PROJECT GEAUX HOME // MISSION 01</p>
