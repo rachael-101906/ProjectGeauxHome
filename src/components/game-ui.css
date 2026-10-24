@@ -1199,7 +1199,7 @@ progress::-moz-progress-bar {
 .travel-menu-panel h2 { color:var(--game-cyan); font-size:14px; line-height:1.8; }
 .travel-menu-panel p { font-size:9px; line-height:1.9; }
 .travel-destinations { display:grid; gap:10px; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); }
-.trader-screen { align-items:center; background:linear-gradient(rgba(3,10,17,.86),rgba(3,10,17,.94)),url('/src/components/assets/backgrounds/vastitas-borealis.png') center/cover; display:flex; inset:0; justify-content:center; overflow:auto; padding:clamp(12px,3vw,32px); position:fixed; z-index:70; }
+.trader-screen { align-items:center; background:radial-gradient(ellipse at 50% 30%,rgba(28,67,79,.55),transparent 60%),#071018; display:flex; inset:0; justify-content:center; overflow:auto; padding:clamp(12px,3vw,32px); position:fixed; z-index:70; }
 .trader-screen__panel { max-height:calc(100vh - 24px); max-width:1000px; overflow:auto; padding:clamp(16px,3vw,30px); width:100%; }
 .trader-screen__header { align-items:flex-start; border-bottom:1px solid rgba(137,240,255,.35); display:flex; gap:16px; justify-content:space-between; padding-bottom:16px; }
 .trader-screen__title { color:var(--game-cyan); font-size:clamp(16px,2.6vw,24px); line-height:1.7; margin-top:10px; }
