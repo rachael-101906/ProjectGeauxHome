@@ -1056,3 +1056,111 @@ progress::-moz-progress-bar {
     padding: 6px;
   }
 }
+
+
+/* Full-width character dialogue panel with a pixel portrait beside the text. */
+.rover-tab {
+  align-items: stretch;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column-reverse;
+  left: 16px;
+  max-width: none;
+  right: 16px;
+  width: auto;
+}
+.rover-tab__button { align-self: flex-end; }
+.rover-tab--open .rover-tab__button { display: none; }
+.rover-tab .rover-dialogue {
+  align-items: stretch;
+  background: rgba(5, 14, 22, 0.97);
+  border: 2px solid var(--game-cyan);
+  box-shadow: 0 0 0 3px rgba(7,16,24,.85), 0 0 22px rgba(137,240,255,.18);
+  color: var(--game-cream);
+  display: flex;
+  flex-direction: row;
+  gap: clamp(12px, 2vw, 24px);
+  margin: 0 0 10px;
+  min-height: 150px;
+  padding: clamp(10px, 1.5vw, 18px);
+  width: 100%;
+}
+.rover-dialogue__portrait {
+  background: #101f2b;
+  border: 1px solid rgba(137,240,255,.7);
+  flex: 0 0 clamp(88px, 12vw, 150px);
+  height: clamp(92px, 12vw, 145px);
+  overflow: hidden;
+  position: relative;
+}
+.rover-dialogue__rover-image {
+  image-rendering: pixelated;
+  left: -111.94%;
+  max-width: none;
+  position: absolute;
+  top: -68%;
+  width: 286.57%;
+}
+.rover-dialogue__content { align-self: center; flex: 1; min-width: 0; }
+.rover-dialogue__speaker {
+  color: var(--game-cyan);
+  font-size: clamp(8px, 1vw, 11px);
+  letter-spacing: .12em;
+  margin-bottom: 12px;
+}
+.rover-dialogue__text {
+  font-size: clamp(8px, .9vw, 11px);
+  line-height: 2;
+  max-width: 100ch;
+}
+.rover-dialogue__actions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.rover-dialogue__choice { font-size: 8px; min-height: 34px; }
+.hugh-portrait { height: 100%; image-rendering: pixelated; position: relative; width: 100%; }
+.hugh-portrait__head {
+  background: #e8b982;
+  border: 4px solid #312b32;
+  height: 38%;
+  left: 33%;
+  position: absolute;
+  top: 10%;
+  width: 34%;
+}
+.hugh-portrait__head::before {
+  background: #4a3026;
+  content: "";
+  height: 8px;
+  left: -3px;
+  position: absolute;
+  right: -3px;
+  top: -5px;
+}
+.hugh-portrait__neck {
+  background: #dba16e;
+  height: 12%;
+  left: 43%;
+  position: absolute;
+  top: 45%;
+  width: 14%;
+}
+.hugh-portrait__shoulders {
+  background: #4f8b94;
+  border: 4px solid #27333d;
+  height: 38%;
+  left: 13%;
+  position: absolute;
+  top: 53%;
+  width: 74%;
+}
+@media (max-width: 560px) {
+  .rover-tab { bottom: 8px; left: 8px; right: 8px; }
+  .rover-tab .rover-dialogue { gap: 10px; min-height: 116px; padding: 8px; }
+  .rover-dialogue__portrait { flex-basis: 72px; height: 84px; }
+  .rover-dialogue__text { font-size: 7px; line-height: 1.8; }
+  .rover-dialogue__actions { flex-direction: column; }
+}

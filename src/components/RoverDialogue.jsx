@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bot } from 'lucide-react'
+import roverPortrait from './assets/backgrounds/rover.png'
 
 // Typewriter dialogue box. Optional `actions` ([{ label, onClick }]) are shown
 // as buttons once the line has finished typing. Keyboard: 1-9 pick an action,
 // E / Enter picks the only action, or skips the typing if it is still going.
-export default function RoverDialogue({ message: messageOverride, actions = [] }) {
+export default function RoverDialogue({ message: messageOverride, actions = [], speaker = "R.O.V.E.R." }) {
   const text = messageOverride || 'Beep boop. R.O.V.E.R. online.'
   const [visibleText, setVisibleText] = useState('')
   const done = visibleText.length >= text.length
@@ -19,7 +19,6 @@ export default function RoverDialogue({ message: messageOverride, actions = [] }
       setVisibleText(text.slice(0, characterIndex))
       if (characterIndex >= text.length) {
         window.clearInterval(interval)
-        completionRef.current?.()
       }
     }, 24)
 
@@ -56,12 +55,20 @@ export default function RoverDialogue({ message: messageOverride, actions = [] }
   }, [actions, done, text])
 
   return (
-    <div
-      className="rover-dialogue flex items-start gap-3 rounded-lg border border-orange-900/60 bg-black/30 p-3"
-    >
-      <Bot className="mt-0.5 shrink-0 text-orange-300" size={22} />
-      <div className="min-w-0 flex-1">
-        <div className="text-xs uppercase tracking-widest text-orange-300/70">R.O.V.E.R.</div>
+    <div className={`rover-dialogue rover-dialogue--${speaker === "HUGH MANN" ? "hugh" : "rover"}`}>
+      <div className="rover-dialogue__portrait" aria-hidden="true">
+        {speaker === "HUGH MANN" ? (
+          <div className="hugh-portrait">
+            <span className="hugh-portrait__head" />
+            <span className="hugh-portrait__neck" />
+            <span className="hugh-portrait__shoulders" />
+          </div>
+        ) : (
+          <img className="rover-dialogue__rover-image" src={roverPortrait} alt="" draggable="false" />
+        )}
+      </div>
+      <div className="rover-dialogue__content">
+        <div className="rover-dialogue__speaker">{speaker}</div>
         <p aria-live="polite" className="rover-dialogue__text text-sm">{visibleText}<span aria-hidden="true" className="rover-dialogue__cursor">▌</span></p>
         {done && actions.length > 0 && (
           <div className="rover-dialogue__actions">

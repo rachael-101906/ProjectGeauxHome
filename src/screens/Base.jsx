@@ -19,7 +19,7 @@ const MOVE_SPEED_X = 30;
 const MOVE_SPEED_Y = 34;
 // minX/maxX keep Hugh clear of the left and right travel buttons.
 const MOVE_LIMITS = { minX: 10, maxX: 90, minY: 50, maxY: 88 };
-const START_POSITION = { x: 50, y: 72 };
+const START_POSITION = { x: 27, y: 72 }; // Spawn beside the crash site so Hugh starts close to the ship.
 
 // R.O.V.E.R. waits on the right side of the crash site (percent of the screen).
 // Hugh can press E when he is within ROVER_REACH of it.
@@ -65,6 +65,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const [travelTarget, setTravelTarget] = useState(null);
   const [roverOpen, setRoverOpen] = useState(false);
   const [roverLine, setRoverLine] = useState(ROVER_ASK_NAME);
+  const [hughReply, setHughReply] = useState(false);
   const [roverSequence, setRoverSequence] = useState(false);
   const [fadeToBlack, setFadeToBlack] = useState(false);
 
@@ -198,18 +199,20 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   function closeRover() {
     setRoverOpen(false);
     setRoverLine(ROVER_ASK_NAME);
+    setHughReply(false);
   }
 
-  // Options for dialogue window
-  const roverActions =
-    roverLine === ROVER_ASK_NAME
-      ? user_dialogue.map((label, index) => ({
-          label,
-          onClick: index === 0 ? () => setRoverLine(1) : closeRover,
-        }))
-      : roverLine < ROVER_LAST_LINE
-      ? [{ label: "CONTINUE", onClick: () => setRoverLine(roverLine + 1) }]
-      : [{ label: "CLOSE", onClick: closeRover }];
+  // Hugh's selected name appears as his own line before R.O.V.E.R. responds.
+  const roverActions = hughReply
+    ? [{ label: "CONTINUE", onClick: () => { setHughReply(false); setRoverLine(1); } }]
+    : roverLine === ROVER_ASK_NAME
+    ? user_dialogue.map((label, index) => ({
+        label,
+        onClick: index === 0 ? () => setHughReply(true) : closeRover,
+      }))
+    : roverLine < ROVER_LAST_LINE
+    ? [{ label: "CONTINUE", onClick: () => setRoverLine((line) => line + 1) }]
+    : [{ label: "CLOSE", onClick: closeRover }];
 
   function finishRoverDialogue() {
     setRoverSequence(true);
@@ -355,8 +358,9 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
           {roverOpen && (
             <RoverDialogue
               actions={roverActions}
-              key={roverLine}
-              message={rover_dialogue[roverLine]}
+              key={`${roverLine}-${hughReply ? "hugh" : "rover"}`}
+              message={hughReply ? "Hugh Mann." : rover_dialogue[roverLine]}
+              speaker={hughReply ? "HUGH MANN" : "R.O.V.E.R."}
             />
           )}
         </aside>
