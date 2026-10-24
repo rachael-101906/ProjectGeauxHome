@@ -407,24 +407,28 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
       {miningNotice && <div className="mining-notice" role="status">{miningNotice}</div>}
       {charactersVisible && <div className="ore-counter" aria-live="polite">MARTIAN ORE: {oreCount}</div>}
 
-      {charactersVisible && <button
-        aria-label={`Travel toward ${previousLocation.name}`}
-        className="edge-travel edge-travel--left"
-        onClick={() => setTravelTarget(previousLocation)}
-        type="button"
-      >
-        <span aria-hidden="true">‹</span>
-        <small>{previousLocation.name}</small>
-      </button>
-      <button
-        aria-label={`Travel toward ${nextLocation.name}`}
-        className="edge-travel edge-travel--right"
-        onClick={() => setTravelTarget(nextLocation)}
-        type="button"
-      >
-        <small>{nextLocation.name}</small>
-        <span aria-hidden="true">›</span>
-      </button>
+      {charactersVisible && (
+        <>
+          <button
+            aria-label={`Travel toward ${previousLocation.name}`}
+            className="edge-travel edge-travel--left"
+            onClick={() => setTravelTarget(previousLocation)}
+            type="button"
+          >
+            <span aria-hidden="true">‹</span>
+            <small>{previousLocation.name}</small>
+          </button>
+          <button
+            aria-label={`Travel toward ${nextLocation.name}`}
+            className="edge-travel edge-travel--right"
+            onClick={() => setTravelTarget(nextLocation)}
+            type="button"
+          >
+            <small>{nextLocation.name}</small>
+            <span aria-hidden="true">›</span>
+          </button>
+        </>
+      )}
 
       {saveError && (
         <p aria-live="assertive" className="mission-save-error" role="alert">
@@ -440,7 +444,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         selectedTool={selectedTool}
       />
 
-      {currentLocation.id === "arcadia" && (
+      {charactersVisible && (
         <aside className={`rover-tab${roverOpen ? " rover-tab--open" : ""}`}>
           <button
             aria-expanded={roverOpen}
