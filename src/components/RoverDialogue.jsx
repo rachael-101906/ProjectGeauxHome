@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import roverPortrait from './assets/characters/rover.png'
 import hughPortrait from './assets/characters/Hugh.png'
+import { isVoiceMuted, loadVoiceLine, setVoiceMuted } from '../systems/voice.js'
 
 // Typewriter dialogue box. Optional `actions` ([{ label, onClick }]) are shown
 // as buttons once the line has finished typing. Keyboard: 1-9 pick an action,
@@ -12,25 +13,73 @@ export default function RoverDialogue({ message: messageOverride, actions = [], 
 
   const finishTyping = useRef(() => {})
 
+  const [muted, setMuted] = useState(isVoiceMuted)
+
   useEffect(() => {
     setVisibleText('')
-    let characterIndex = 0
-    const interval = window.setInterval(() => {
-      characterIndex += 1
-      setVisibleText(text.slice(0, characterIndex))
-      if (characterIndex >= text.length) {
-        window.clearInterval(interval)
-      }
-    }, 24)
+    let cancelled = false
+    let interval = null
+    let raf = null
+    let audio = null
 
-    // Lets a key press skip ahead without the timer typing over it.
+    // Plain typewriter (no voice available).
+    function typewriter() {
+      let characterIndex = 0
+      interval = window.setInterval(() => {
+        characterIndex += 1
+        setVisibleText(text.slice(0, characterIndex))
+        if (characterIndex >= text.length) window.clearInterval(interval)
+      }, 24)
+    }
+
+    // Voice-synced: reveal each character when ElevenLabs says it is spoken.
+    function syncToAudio(startTimes) {
+      const step = () => {
+        const t = audio.currentTime
+        let shown = 0
+        while (shown < startTimes.length && startTimes[shown] <= t) shown += 1
+        if (audio.ended) shown = text.length
+        setVisibleText(text.slice(0, shown))
+        if (shown < text.length) raf = requestAnimationFrame(step)
+      }
+      raf = requestAnimationFrame(step)
+    }
+
+    // Don't leave the box empty for long if the voice is slow to arrive.
+    const slowVoice = window.setTimeout(() => {
+      if (!audio && !interval) typewriter()
+    }, 1500)
+
+    loadVoiceLine(text, speaker).then((line) => {
+      if (cancelled) return
+      window.clearTimeout(slowVoice)
+      if (!line || interval) {
+        if (!interval) typewriter()
+        return
+      }
+      audio = line.audio
+      audio.play().then(
+        () => !cancelled && syncToAudio(line.startTimes),
+        () => !cancelled && typewriter(), // autoplay blocked etc.
+      )
+    })
+
+    // Lets a key press skip ahead (the voice keeps talking until the next line).
     finishTyping.current = () => {
       window.clearInterval(interval)
+      cancelAnimationFrame(raf)
+      interval = interval ?? -1
       setVisibleText(text)
     }
 
-    return () => window.clearInterval(interval)
-  }, [text])
+    return () => {
+      cancelled = true
+      window.clearTimeout(slowVoice)
+      window.clearInterval(interval)
+      cancelAnimationFrame(raf)
+      audio?.pause()
+    }
+  }, [text, speaker, muted])
 
   useEffect(() => {
     function onKeyDown(event) {
@@ -65,7 +114,17 @@ export default function RoverDialogue({ message: messageOverride, actions = [], 
         />
       </div>
       <div className="rover-dialogue__content">
-        <div className="rover-dialogue__speaker">{speaker}</div>
+        <div className="rover-dialogue__speaker">
+          {speaker}
+          <button
+            aria-label={muted ? 'Unmute voice' : 'Mute voice'}
+            className="rover-dialogue__mute"
+            onClick={() => { setVoiceMuted(!muted); setMuted(!muted) }}
+            type="button"
+          >
+            {muted ? 'VOICE OFF' : 'VOICE ON'}
+          </button>
+        </div>
         <p aria-live="polite" className="rover-dialogue__text text-sm">{visibleText}<span aria-hidden="true" className="rover-dialogue__cursor">▌</span></p>
         {done && actions.length > 0 && (
           <div className="rover-dialogue__actions">

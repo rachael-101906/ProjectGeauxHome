@@ -1402,3 +1402,13 @@ progress::-moz-progress-bar {
 }
 @keyframes hurt-flash { to { opacity: 0; } }
 .travel-prompt .game-button:disabled { cursor: not-allowed; opacity: .45; }
+.rover-dialogue__speaker { align-items: center; display: flex; gap: 12px; justify-content: space-between; }
+.rover-dialogue__mute {
+  background: none;
+  border: 1px solid rgba(137, 240, 255, .5);
+  color: var(--game-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 7px;
+  padding: 4px 6px;
+}
