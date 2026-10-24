@@ -5,6 +5,12 @@ import HUD from "../components/HUD.jsx";
 import ObjectivesMenu from "../components/ObjectivesMenu.jsx";
 import PauseMenu from "../components/PauseMenu.jsx";
 import RoverDialogue from "../components/RoverDialogue.jsx";
+import TradingPost, { ORE_ICONS } from "./TradingPost.jsx";
+import hughRight from "../components/assets/characters/Hugh.png";
+import hughLeft from "../components/assets/characters/HughL.png";
+import oreTypes from "../data/ores.js";
+import shop from "../data/shop.js";
+import { DRILL_FRAMES } from "../data/art.js";
 
 import smoke from "../components/assets/icons/pixel-art-32x32-2f.gif";
 import arcadia from "../components/assets/backgrounds/arcadia.png";
@@ -110,6 +116,8 @@ const locations = [
   { id: "albaMons", name: "ALBA MONS", asset: albaMons },
   { id: "tempeTerra", name: "TEMPE TERRA", asset: tempeTerra },
   { id: "vastitas", name: "VASTITAS BOREALIS", asset: vastitasBorealis },
+  // Mobs live here, and the sulfur air means Hugh needs DJ-TMoney's Filter to enter.
+  { id: "olympus", name: "OLYMPUS MONS", asset: olympusMons, needsFilter: true },
 ];
 
 // ============================================
@@ -549,6 +557,11 @@ export default function Base({
 
       if (element) {
         element.dataset.walking = String(moving);
+      }
+      const nodeId = actionRef.current.findNearbyNode()?.id ?? null;
+      if (nodeId !== nearNodeRef.current) {
+        nearNodeRef.current = nodeId;
+        setNearNodeId(nodeId);
       }
 
       updateHughSprite(moving, dx, dt);
@@ -1258,10 +1271,11 @@ export default function Base({
             <div className="travel-prompt__actions">
               <button
                 className="game-button"
+                disabled={travelLocked}
                 onClick={confirmTravel}
                 type="button"
               >
-                TRAVEL
+                {travelLocked ? "NEED FILTER" : "TRAVEL"}
               </button>
 
               <button

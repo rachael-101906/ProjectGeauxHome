@@ -11,6 +11,8 @@ export default function RoverDialogue({
   const finishTyping = useRef(() => {});
   const done = visibleText.length >= text.length;
 
+  const [muted, setMuted] = useState(isVoiceMuted)
+
   useEffect(() => {
     setVisibleText("");
     let characterIndex = 0;
