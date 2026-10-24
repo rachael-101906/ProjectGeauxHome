@@ -3,6 +3,7 @@ import HUD from "../components/HUD.jsx";
 import ObjectivesMenu from "../components/ObjectivesMenu.jsx";
 import PauseMenu from "../components/PauseMenu.jsx";
 import RoverDialogue from "../components/RoverDialogue.jsx";
+import TraderScreen from "./TraderScreen.jsx";
 
 import smoke from "../components/assets/icons/pixel-art-32x32-2f.gif";
 import spaceship from "../components/assets/backgrounds/spaceship.png";
@@ -19,7 +20,9 @@ const MOVE_SPEED_X = 30;
 const MOVE_SPEED_Y = 34;
 // minX/maxX keep Hugh clear of the left and right travel buttons.
 const MOVE_LIMITS = { minX: 10, maxX: 90, minY: 50, maxY: 88 };
-const START_POSITION = { x: 27, y: 72 }; // Spawn beside the crash site so Hugh starts close to the ship.
+const START_POSITION = { x: 18, y: 72 }; // Spawn beside the crashed ship.
+const MINE_SPOT = { x: 55, y: 75 };
+const MINE_REACH = { x: 9, y: 12 };
 
 // R.O.V.E.R. waits on the right side of the crash site (percent of the screen).
 // Hugh can press E when he is within ROVER_REACH of it.
@@ -59,9 +62,17 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const [objectivesOpen, setObjectivesOpen] = useState(false);
   const [paused, setPaused] = useState(false);
   const [pauseNotice, setPauseNotice] = useState("");
-  const [selectedTool, setSelectedTool] = useState(
-    savedGame.selectedTool || "Drill"
-  );
+  const [selectedTool, setSelectedTool] = useState(savedGame.selectedTool || "Drill");
+  const [locationId, setLocationId] = useState(savedGame.location || "arcadia");
+  const [oreCount, setOreCount] = useState(Math.max(0, Number(savedGame.oreCount) || 0));
+  const [minedLocations, setMinedLocations] = useState(Array.isArray(savedGame.minedLocations) ? savedGame.minedLocations : []);
+  const [miningNotice, setMiningNotice] = useState("");
+  const [credits, setCredits] = useState(Math.max(0, Number(savedGame.credits) || 0));
+  const [traderInventory, setTraderInventory] = useState(savedGame.traderInventory || { oxygenFilters: 0, repairKits: 0, drillUpgrades: 0 });
+  const [showTradeScreen, setShowTradeScreen] = useState(false);
+  const [travelMenuOpen, setTravelMenuOpen] = useState(false);
+  const [showLocationTitle, setShowLocationTitle] = useState(true);
+  const [charactersVisible, setCharactersVisible] = useState(false);
   const [travelTarget, setTravelTarget] = useState(null);
   const [roverOpen, setRoverOpen] = useState(false);
   const [roverLine, setRoverLine] = useState(ROVER_ASK_NAME);
@@ -74,19 +85,14 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const positionRef = useRef({ ...START_POSITION });
   const heldKeys = useRef(new Set());
   const nearRoverRef = useRef(false);
+  const mineResourceRef = useRef(() => {});
   const [nearRover, setNearRover] = useState(false);
 
-  const movementBlocked =
-    paused || objectivesOpen || roverOpen || Boolean(travelTarget);
+  const movementBlocked = paused || objectivesOpen || roverOpen || Boolean(travelTarget) || travelMenuOpen || roverSequence || fadeToBlack || showTradeScreen || showLocationTitle || !charactersVisible;
   const blockedRef = useRef(movementBlocked);
   blockedRef.current = movementBlocked;
 
-  const locationIndex = Math.max(
-    0,
-    locations.findIndex(
-      (location) => location.id === (savedGame.location || "arcadia")
-    )
-  );
+  const locationIndex = Math.max(0, locations.findIndex((location) => location.id === locationId));
   const currentLocation = locations[locationIndex];
   const previousLocation =
     locations[(locationIndex - 1 + locations.length) % locations.length];
@@ -96,33 +102,82 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     if (onSave) {
       onSave({
         selectedTool,
-        location: savedGame.location || "arcadia",
+        location: locationId,
         currentObjective: savedGame.currentObjective,
         objectives: savedGame.objectives,
+        oreCount,
+        minedLocations,
+        credits,
+        traderInventory,
       });
     }
   }, [
     onSave,
     savedGame.currentObjective,
-    savedGame.location,
+    locationId,
     savedGame.objectives,
     selectedTool,
+    oreCount,
+    minedLocations,
+    credits,
+    traderInventory,
   ]);
+
+  // Brief title card on every map: hold for one second, fade, then reveal characters.
+  useEffect(() => {
+    setShowLocationTitle(true);
+    setCharactersVisible(false);
+    const fadeTitle = window.setTimeout(() => setShowLocationTitle(false), 1600);
+    const revealScene = window.setTimeout(() => setCharactersVisible(true), 1600);
+    return () => { window.clearTimeout(fadeTitle); window.clearTimeout(revealScene); };
+  }, [locationId]);
+
+  function mineResource() {
+    const { x, y } = positionRef.current;
+    if (Math.abs(x - MINE_SPOT.x) > MINE_REACH.x || Math.abs(y - MINE_SPOT.y) > MINE_REACH.y) { setMiningNotice("MOVE CLOSER TO THE DEPOSIT"); return; }
+    if (selectedTool !== "Drill") { setMiningNotice("EQUIP THE DRILL FIRST"); return; }
+    if (minedLocations.includes(locationId)) { setMiningNotice("THIS DEPOSIT IS EMPTY"); return; }
+    const nextOre = oreCount + 1;
+    const nextMined = [...minedLocations, locationId];
+    setOreCount(nextOre); setMinedLocations(nextMined); setMiningNotice("+1 MARTIAN ORE");
+    onSave?.({ oreCount: nextOre, minedLocations: nextMined });
+    window.setTimeout(() => setMiningNotice(""), 1800);
+  }
+  mineResourceRef.current = mineResource;
+
+  function sellOre(quantity) {
+    const amount = quantity === "all" ? oreCount : Math.min(1, oreCount);
+    if (!amount) return;
+    const nextOre = oreCount - amount, nextCredits = credits + amount * 10;
+    setOreCount(nextOre); setCredits(nextCredits);
+    onSave?.({ oreCount: nextOre, credits: nextCredits });
+  }
+
+  function buyTraderItem(itemId, price) {
+    if (credits < price) return;
+    const nextCredits = credits - price;
+    const nextInventory = { ...traderInventory, [itemId]: (traderInventory[itemId] || 0) + 1 };
+    setCredits(nextCredits); setTraderInventory(nextInventory);
+    onSave?.({ credits: nextCredits, traderInventory: nextInventory });
+  }
 
   // Smooth movement loop
   useEffect(() => {
     const held = heldKeys.current;
 
     function onKeyDown(event) {
-      if (
-        event.key.toLowerCase() === "e" &&
-        !event.repeat &&
-        nearRoverRef.current &&
-        !blockedRef.current
-      ) {
-        event.preventDefault();
-        setRoverOpen(true);
-        return;
+      if (event.key.toLowerCase() === "e" && !event.repeat && !blockedRef.current) {
+        if (nearRoverRef.current) {
+          event.preventDefault();
+          setRoverOpen(true);
+          return;
+        }
+        const { x, y } = positionRef.current;
+        if (Math.abs(x - MINE_SPOT.x) <= MINE_REACH.x && Math.abs(y - MINE_SPOT.y) <= MINE_REACH.y) {
+          event.preventDefault();
+          mineResourceRef.current();
+          return;
+        }
       }
 
       const direction = MOVE_KEYS[event.key.toLowerCase()];
@@ -212,17 +267,51 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
       }))
     : roverLine < ROVER_LAST_LINE
     ? [{ label: "CONTINUE", onClick: () => setRoverLine((line) => line + 1) }]
-    : [{ label: "CLOSE", onClick: closeRover }];
+    : [{
+        label: locationId === "arcadia" ? "LET'S RIDE TO VASTITAS" : "CHOOSE A DESTINATION",
+        onClick: () => {
+          if (locationId === "arcadia") finishRoverDialogue();
+          else { setRoverOpen(false); setTravelMenuOpen(true); }
+        },
+      }];
 
   function finishRoverDialogue() {
-    setRoverSequence(true);
-    window.setTimeout(() => setFadeToBlack(true), 1100);
+    heldKeys.current.clear();
+    setRoverOpen(false);
+    setRoverSequence(true); // Hugh hops onto the rover, then they drive off-screen together.
+    window.setTimeout(() => setFadeToBlack(true), 1500);
+    window.setTimeout(() => {
+      setLocationId("vastitas");
+      positionRef.current = { ...START_POSITION };
+      setShowTradeScreen(true);
+      setRoverSequence(false);
+      setFadeToBlack(false);
+      setShowLocationTitle(true);
+      setCharactersVisible(false);
+      onSave?.({ location: "vastitas", playerX: START_POSITION.x, playerY: START_POSITION.y });
+    }, 2700);
+  }
+
+  function chooseRoverDestination(destination) {
+    setTravelMenuOpen(false);
+    setFadeToBlack(true);
+    heldKeys.current.clear();
+    window.setTimeout(() => {
+      setLocationId(destination.id);
+      positionRef.current = { ...START_POSITION };
+      setShowTradeScreen(destination.id === "vastitas");
+      setFadeToBlack(false);
+      setShowLocationTitle(true);
+      setCharactersVisible(false);
+      onSave?.({ location: destination.id, playerX: START_POSITION.x, playerY: START_POSITION.y });
+    }, 1200);
   }
 
   function confirmTravel() {
     if (!travelTarget) return;
-    if (onSave) onSave({ location: travelTarget.id });
+    const destination = travelTarget;
     setTravelTarget(null);
+    chooseRoverDestination(destination);
   }
 
   // Handle Pause and Objectives hotkeys
@@ -269,7 +358,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
             <img className="mission-ship-smoke" src={smoke} alt="" />
           </div>
         )}
-        {currentLocation.id === "arcadia" && (
+        {charactersVisible && (
           <div
             aria-label="Hugh Mann"
             className="hugh-mann"
@@ -285,7 +374,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         )}
       </div>
 
-      {currentLocation.id === "arcadia" && (
+      {charactersVisible && (
         <button
           aria-label="Talk to R.O.V.E.R."
           className="rover-npc"
@@ -302,7 +391,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         </button>
       )}
 
-      <header className="mission-location">
+      {showLocationTitle && <header className="mission-location location-title-splash">
         <p className="game-eyebrow">PROJECT GEAUX HOME // MISSION 01</p>
         <h1>{currentLocation.name}</h1>
         <p>
@@ -310,26 +399,38 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
             ? "CRASH SITE // SECTOR 01"
             : "TRAVEL ROUTE // SECTOR 02"}
         </p>
-      </header>
+      </header>}
 
-      <button
-        aria-label={`Travel toward ${previousLocation.name}`}
-        className="edge-travel edge-travel--left"
-        onClick={() => setTravelTarget(previousLocation)}
-        type="button"
-      >
-        <span aria-hidden="true">‹</span>
-        <small>{previousLocation.name}</small>
-      </button>
-      <button
-        aria-label={`Travel toward ${nextLocation.name}`}
-        className="edge-travel edge-travel--right"
-        onClick={() => setTravelTarget(nextLocation)}
-        type="button"
-      >
-        <small>{nextLocation.name}</small>
-        <span aria-hidden="true">›</span>
-      </button>
+      {charactersVisible && !minedLocations.includes(locationId) && (
+        <button className="mine-node" onClick={mineResource} style={{ left: `${MINE_SPOT.x}%`, top: `${MINE_SPOT.y}%` }} type="button" aria-label="Mine the nearby ore deposit">
+          <span className="mine-node__rock" aria-hidden="true">◆</span><span className="mine-node__label">ORE [E]</span>
+        </button>
+      )}
+      {miningNotice && <div className="mining-notice" role="status">{miningNotice}</div>}
+      {charactersVisible && <div className="ore-counter" aria-live="polite">MARTIAN ORE: {oreCount}</div>}
+
+      {charactersVisible && (
+        <>
+          <button
+            aria-label={`Travel toward ${previousLocation.name}`}
+            className="edge-travel edge-travel--left"
+            onClick={() => setTravelTarget(previousLocation)}
+            type="button"
+          >
+            <span aria-hidden="true">‹</span>
+            <small>{previousLocation.name}</small>
+          </button>
+          <button
+            aria-label={`Travel toward ${nextLocation.name}`}
+            className="edge-travel edge-travel--right"
+            onClick={() => setTravelTarget(nextLocation)}
+            type="button"
+          >
+            <small>{nextLocation.name}</small>
+            <span aria-hidden="true">›</span>
+          </button>
+        </>
+      )}
 
       {saveError && (
         <p aria-live="assertive" className="mission-save-error" role="alert">
@@ -345,7 +446,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         selectedTool={selectedTool}
       />
 
-      {currentLocation.id === "arcadia" && (
+      {charactersVisible && (
         <aside className={`rover-tab${roverOpen ? " rover-tab--open" : ""}`}>
           <button
             aria-expanded={roverOpen}
@@ -367,8 +468,12 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
       )}
 
       {roverSequence && (
-        <div className="rover-escort" aria-hidden="true">
-          <img className="rover-escort__rover" src={roverSprite} alt="" />
+        <div className="rover-ride-cutscene" aria-hidden="true">
+          <div className="rover-ride-cutscene__rover"><img src={roverSprite} alt="" /></div>
+          <div className="rover-ride-cutscene__hugh">
+            <span className="hugh-mann__head" /><span className="hugh-mann__body" />
+            <span className="hugh-mann__leg hugh-mann__leg--left" /><span className="hugh-mann__leg hugh-mann__leg--right" />
+          </div>
         </div>
       )}
       <div className={`black-fade${fadeToBlack ? " black-fade--active" : ""}`} />
@@ -415,6 +520,25 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
           onSettings={() => setPauseNotice("NO CONFIGURABLE SETTINGS YET.")}
           notice={pauseNotice}
         />
+      )}
+
+      {showTradeScreen && (
+        <TraderScreen credits={credits} oreCount={oreCount} inventory={traderInventory}
+          onSellOre={sellOre} onBuyItem={buyTraderItem} onClose={() => setShowTradeScreen(false)} />
+      )}
+
+      {travelMenuOpen && (
+        <div className="travel-menu-overlay" role="dialog" aria-modal="true" aria-labelledby="rover-destination-title">
+          <section className="game-panel travel-menu-panel">
+            <p className="game-eyebrow">R.O.V.E.R. // MARS TRANSIT</p><h2 id="rover-destination-title">WHERE TO, HUGH?</h2>
+            <p>Choose any mapped destination and I will drive you there.</p>
+            <div className="travel-destinations">{locations.map((destination) => (
+              <button className="game-button" key={destination.id} disabled={destination.id === locationId}
+                onClick={() => chooseRoverDestination(destination)} type="button">{destination.name}</button>
+            ))}</div>
+            <button className="game-button" onClick={() => setTravelMenuOpen(false)} type="button">CANCEL</button>
+          </section>
+        </div>
       )}
 
       {travelTarget && (
