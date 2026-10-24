@@ -1,12 +1,9 @@
 import "./game-ui.css";
-<<<<<<< HEAD
 import CurrentObjective from "./CurrentObjective.jsx";
-import healthCritical from "./assets/icons/15.png";
-import healthLow from "./assets/icons/17.png";
-import healthGood from "./assets/icons/16.png";
-import healthFull from "./assets/icons/18.png";
-=======
->>>>>>> 1fd34968d71b6952e5148bc9e24c0efbaa02ff1e
+import healthCritical from "./assets/icons/third-health.png";
+import healthLow from "./assets/icons/half-health.png";
+import healthGood from "./assets/icons/threequarter-health.png";
+import healthFull from "./assets/icons/full-health.png";
 
 const resources = [
   { key: "health", label: "HEALTH", value: 100 },
