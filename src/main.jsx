@@ -8,7 +8,7 @@ import Base from "./screens/Base.jsx";
 import LocationSelect from "./screens/LocationSelect.jsx";
 import IntroStory from "./components/IntroStory.jsx";
 import PixelTransition from "./components/PixelTransition.jsx";
-import { createSaveSlot, readSaveSlots, updateSaveSlot } from "./data/save.js";
+import { createSaveSlot, readSaveSlots, updateSaveSlot } from "./state/save.js";
 
 const transitionDuration = 500;
 

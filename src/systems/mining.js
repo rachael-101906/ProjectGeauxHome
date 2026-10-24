@@ -1,74 +1,27 @@
-import ores from '../data/ores';
-import shop from '../data/shop';
+import { CONFIG } from '../data/config'
+import { RESOURCES } from '../data/resources'
+import { ok, fail } from './helpers'
 
-const pickaxes = shop.filter((item) => item.type === 'pickaxe');
-
-function getPlayerState(state) {
-    return state.player ?? state;
+// Why a resource can't be mined right now, or null if it can.
+export function miningBlocker(game, oreId) {
+  const r = RESOURCES[oreId]
+  if (!r) return 'Unknown resource.'
+  if (game.location !== r.location) return 'Not mineable here.'
+  if (r.tier > game.gear.pickaxe) return `Needs a T${r.tier} Pickaxe.`
+  if (r.needsFilter && !game.gear.hasFilter) return 'Needs a Filter.'
+  return null
 }
 
-function getOre(ore) {
-    if (typeof ore === 'string') {
-        return ores[ore] ? { id: ore, ...ores[ore] } : null;
-    }
+export function mine(game, oreId) {
+  const blocker = miningBlocker(game, oreId)
+  if (blocker) return fail(game, blocker)
 
-    if (ore && typeof ore === 'object') {
-        const id = ore.id ?? Object.keys(ores).find((oreId) => ores[oreId] === ore);
-        return { id, ...ore };
-    }
-
-    return null;
-}
-
-function getPickaxe(pickaxe) {
-    if (pickaxe && typeof pickaxe === 'object') {
-        return pickaxe;
-    }
-
-    if (typeof pickaxe === 'number') {
-        return pickaxes.find((item) => item.tier === pickaxe) ?? null;
-    }
-
-    if (typeof pickaxe === 'string') {
-        return pickaxes.find((item) => item.id === pickaxe) ?? null;
-    }
-
-    return null;
-}
-
-export function mine(state, ore) {
-    const player = getPlayerState(state);
-    const targetOre = getOre(ore);
-    const pickaxe = getPickaxe(player.gear?.pickaxe);
-
-    if (!targetOre || !pickaxe || targetOre.tier > pickaxe.tier) {
-        return state;
-    }
-
-    if (targetOre.needsFilter && !player.gear?.hasFilter) {
-        return state;
-    }
-
-    const oreHealth = player.mining?.oreHealth ?? {};
-    const currentHealth = oreHealth[targetOre.id] ?? targetOre.health;
-    const remainingHealth = Math.max(0, currentHealth - Number(pickaxe.oreDamage));
-    const minedOre = remainingHealth === 0 ? 1 : 0;
-    const nextPlayer = {
-        ...player,
-        inventory: {
-            ...player.inventory,
-            [targetOre.id]: (player.inventory?.[targetOre.id] ?? 0) + minedOre
-        },
-        mining: {
-            ...player.mining,
-            oreHealth: {
-                ...oreHealth,
-                [targetOre.id]: remainingHealth === 0 ? targetOre.health : remainingHealth
-            }
-        }
-    };
-
-    return state.player
-        ? { ...state, player: nextPlayer }
-        : nextPlayer;
+  const amount = game.gear.pickaxe * CONFIG.yieldPerTier
+  return ok(
+    {
+      ...game,
+      inventory: { ...game.inventory, [oreId]: game.inventory[oreId] + amount },
+    },
+    `Mined ${amount} ${RESOURCES[oreId].name}.`,
+  )
 }
