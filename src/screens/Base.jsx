@@ -85,6 +85,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const positionRef = useRef({ ...START_POSITION });
   const heldKeys = useRef(new Set());
   const nearRoverRef = useRef(false);
+  const mineResourceRef = useRef(() => {});
   const [nearRover, setNearRover] = useState(false);
 
   const movementBlocked = paused || objectivesOpen || roverOpen || Boolean(travelTarget) || travelMenuOpen || roverSequence || fadeToBlack || showTradeScreen || showLocationTitle || !charactersVisible;
@@ -142,6 +143,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     onSave?.({ oreCount: nextOre, minedLocations: nextMined });
     window.setTimeout(() => setMiningNotice(""), 1800);
   }
+  mineResourceRef.current = mineResource;
 
   function sellOre(quantity) {
     const amount = quantity === "all" ? oreCount : Math.min(1, oreCount);
@@ -173,7 +175,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         const { x, y } = positionRef.current;
         if (Math.abs(x - MINE_SPOT.x) <= MINE_REACH.x && Math.abs(y - MINE_SPOT.y) <= MINE_REACH.y) {
           event.preventDefault();
-          mineResource();
+          mineResourceRef.current();
           return;
         }
       }
