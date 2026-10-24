@@ -1,5 +1,11 @@
 const storageKey = "project-geaux-home:saves";
 const slotCount = 3;
+const defaultObjectives = [
+  "Communication Array",
+  "Life Support Core",
+  "Power System",
+  "Propulsion Engine",
+];
 
 export function readSaveSlots() {
   const storedSaves = window.localStorage.getItem(storageKey);
@@ -30,9 +36,9 @@ export function readSaveSlots() {
       typeof save.createdAt !== "string" ||
       typeof save.updatedAt !== "string" ||
       !["briefing", "in-progress"].includes(save.status) ||
+      (save.location !== undefined && typeof save.location !== "string") ||
+      (save.objectiveUnlocked !== undefined && typeof save.objectiveUnlocked !== "boolean") ||
       typeof save.currentObjective !== "string" ||
-      (save.currentLocation !== undefined &&
-        typeof save.currentLocation !== "string") ||
       typeof save.selectedTool !== "string" ||
       !Array.isArray(save.objectives) ||
       !save.objectives.every(
@@ -50,18 +56,9 @@ export function readSaveSlots() {
 
     return {
       ...save,
-      currentLocation: save.currentLocation || "Arcadia Planitia",
-      objectiveStage: Number.isInteger(save.objectiveStage)
-        ? save.objectiveStage
-        : 0,
-      iceCollected: Number.isFinite(save.iceCollected)
-        ? Math.max(0, save.iceCollected)
-        : 0,
-      habitatPowered: Boolean(save.habitatPowered),
-      travelUnlocked: Boolean(save.travelUnlocked),
-      currentObjective: save.objectiveStage === undefined
-        ? "Find R.O.V.E.R."
-        : save.currentObjective,
+      currentObjective: save.objectiveUnlocked ? save.currentObjective : "",
+      location: save.location || "arcadia",
+      objectiveUnlocked: save.objectiveUnlocked === true,
     };
   });
 }
@@ -87,14 +84,11 @@ export function createSaveSlot(slot) {
     createdAt: timestamp,
     updatedAt: timestamp,
     status: "briefing",
-    currentLocation: "Arcadia Planitia",
-    selectedTool: "Pickaxe",
-    currentObjective: "Find R.O.V.E.R.",
-    objectiveStage: 0,
-    iceCollected: 0,
-    habitatPowered: false,
-    travelUnlocked: false,
-    objectives: [],
+    location: "arcadia",
+    selectedTool: "Drill",
+    currentObjective: "",
+    objectiveUnlocked: false,
+    objectives: defaultObjectives.map((name) => ({ name, progress: 0 })),
   };
 
   return writeSaveSlots(saves);

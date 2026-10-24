@@ -1,9 +1,12 @@
 import "./game-ui.css";
+<<<<<<< HEAD
 import CurrentObjective from "./CurrentObjective.jsx";
 import healthCritical from "./assets/icons/15.png";
 import healthLow from "./assets/icons/17.png";
 import healthGood from "./assets/icons/16.png";
 import healthFull from "./assets/icons/18.png";
+=======
+>>>>>>> 1fd34968d71b6952e5148bc9e24c0efbaa02ff1e
 
 const resources = [
   { key: "health", label: "HEALTH", value: 100 },
@@ -12,13 +15,16 @@ const resources = [
   { key: "power", label: "POWER", value: 100 },
 ];
 
+const tools = ["Drill", "Blaster", "Repair Tool"];
+
 export default function HUD({
   health = 100,
   oxygen = 100,
   water = 100,
   power = 100,
-  currentObjective = "Find R.O.V.E.R.",
-  objectiveProgress,
+  currentObjective = "",
+  selectedTool = "Drill",
+  onSelectTool,
 }) {
   const values = { health, oxygen, water, power };
   const normalizedHealth = Math.min(100, Math.max(0, Number(health) || 0));
@@ -69,10 +75,29 @@ export default function HUD({
         })}
       </section>
 
-      <CurrentObjective
-        objective={currentObjective}
-        progress={objectiveProgress}
-      />
+      {currentObjective && (
+        <section aria-label="Current objective" className="game-panel hud-objective">
+          <p className="game-eyebrow">CURRENT OBJECTIVE</p>
+          <p className="hud-objective__text">{currentObjective}</p>
+        </section>
+      )}
+
+      <nav aria-label="Tool hotbar" className="game-panel hud-hotbar">
+        {tools.map((tool, index) => (
+          <button
+            aria-pressed={selectedTool === tool}
+            className={`hud-tool${selectedTool === tool ? " is-selected" : ""}`}
+            key={tool}
+            onClick={() => onSelectTool?.(tool)}
+            type="button"
+          >
+            <span aria-hidden="true" className="hud-tool__key">
+              {index + 1}
+            </span>
+            <span>{tool}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
