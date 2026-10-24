@@ -1,5 +1,5 @@
 // B-Zeno, A-Zeno, Alpha Zeno
-// Spawn during olympus 
+// Spawn during olympus. Art lives in src/components/assets/mobs (see data/art.js MOB_ART).
 
 const mobs = {
     bZeno: { name: "B-Zeno", damage: 10, health: 10, description: "Small babies" },
