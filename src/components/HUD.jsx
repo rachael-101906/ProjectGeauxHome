@@ -1,5 +1,4 @@
 import "./game-ui.css";
-import CurrentObjective from "./CurrentObjective.jsx";
 import healthCritical from "./assets/icons/third-health.png";
 import healthLow from "./assets/icons/half-health.png";
 import healthGood from "./assets/icons/threequarter-health.png";
@@ -10,6 +9,7 @@ export default function HUD({
   currentObjective = "",
   selectedTool = "Drill",
   onSelectTool,
+  toolIcons = {}, // { Drill: url, Blaster: url } — sprite shown in the hotbar slot
 }) {
   const normalizedHealth = Math.min(
     100,
@@ -78,6 +78,9 @@ export default function HUD({
             <span aria-hidden="true" className="hud-tool__key">
               {index + 1}
             </span>
+            {toolIcons[tool] && (
+              <img alt="" aria-hidden="true" className="hud-tool__icon" draggable="false" src={toolIcons[tool]} />
+            )}
             <span>{tool}</span>
           </button>
         ))}

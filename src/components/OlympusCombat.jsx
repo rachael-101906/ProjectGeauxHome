@@ -1,13 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import mobs from "../data/mobs.js";
-import { MOB_ART } from "../data/art.js";
+import { ALPHA_FRAMES, MOB_ART } from "../data/art.js";
 import fireball from "./assets/icons/fireball.png";
 
 // Mob tuning (positions/speeds are in % of the screen).
+// Keys match src/data/mobs.js.
 const MOB_TUNING = {
-  bZero: { speed: 9, reward: 5, size: 56, weight: 0.7 },
-  aZero: { speed: 13, reward: 15, size: 72, weight: 0.3 },
+  bZeno: { speed: 9, reward: 5, size: 56, weight: 0.7 },
+  aZeno: { speed: 13, reward: 15, size: 72, weight: 0.3 },
+  alphaZeno: { speed: 6, reward: 150, size: 140 },
 };
+// The Alpha Zeno boss shows up once per visit after this many kills.
+const KILLS_BEFORE_ALPHA = 8;
+const ALPHA_FRAME_MS = 300;
 const MAX_MOBS = 4;
 const SPAWN_EVERY_MS = 2800;
 const HIT_COOLDOWN_MS = 900; // how often one mob can hurt Hugh
@@ -19,8 +24,8 @@ const BOUNDS = { minX: 6, maxX: 94, minY: 52, maxY: 90 };
 
 let nextId = 1;
 
-function spawnMob() {
-  const type = Math.random() < MOB_TUNING.bZero.weight ? "bZero" : "aZero";
+function spawnMob(forcedType) {
+  const type = forcedType ?? (Math.random() < MOB_TUNING.bZeno.weight ? "bZeno" : "aZeno");
   const fromLeft = Math.random() < 0.5;
   return {
     id: nextId++,
@@ -49,7 +54,7 @@ export default function OlympusCombat({
   onHurt,
   onKill,
 }) {
-  const world = useRef({ mobs: [], shots: [], lastSpawn: 0 });
+  const world = useRef({ mobs: [], shots: [], lastSpawn: 0, kills: 0, alphaSpawned: false });
   const [, setFrame] = useState(0);
   const props = useRef({});
   props.current = { armed, blasterDamage, paused, onHurt, onKill };
@@ -100,7 +105,11 @@ export default function OlympusCombat({
       const p = props.current;
 
       if (!p.paused) {
-        if (w.mobs.length < MAX_MOBS && now - w.lastSpawn > SPAWN_EVERY_MS) {
+        if (!w.alphaSpawned && w.kills >= KILLS_BEFORE_ALPHA) {
+          w.alphaSpawned = true;
+          w.mobs.push(spawnMob("alphaZeno"));
+          w.lastSpawn = now;
+        } else if (w.mobs.length < MAX_MOBS && now - w.lastSpawn > SPAWN_EVERY_MS) {
           w.mobs.push(spawnMob());
           w.lastSpawn = now;
         }
@@ -131,17 +140,22 @@ export default function OlympusCombat({
           shot.x += shot.vx * dt;
           shot.y += shot.vy * dt;
           shot.age += dt;
-          const target = w.mobs.find(
-            (mob) =>
+          const target = w.mobs.find((mob) => {
+            const scale = mob.type === "alphaZeno" ? 2.5 : 1;
+            return (
               mob.hp > 0 &&
-              Math.abs(mob.x - shot.x) < SHOT_HIT_RANGE.x &&
-              Math.abs(mob.y - 4 - shot.y) < SHOT_HIT_RANGE.y,
-          );
+              Math.abs(mob.x - shot.x) < SHOT_HIT_RANGE.x * scale &&
+              Math.abs(mob.y - 4 * scale - shot.y) < SHOT_HIT_RANGE.y * scale
+            );
+          });
           if (target) {
             target.hp -= p.blasterDamage;
             target.flash = 0.15;
             shot.age = SHOT_LIFE_S;
-            if (target.hp <= 0) p.onKill(MOB_TUNING[target.type].reward, mobs[target.type].name);
+            if (target.hp <= 0) {
+              w.kills += 1;
+              p.onKill(MOB_TUNING[target.type].reward, mobs[target.type].name);
+            }
           }
         }
         w.shots = w.shots.filter((s) => s.age < SHOT_LIFE_S);
@@ -156,12 +170,13 @@ export default function OlympusCombat({
   }, [hughPosition]);
 
   const { mobs: liveMobs, shots } = world.current;
+  const alphaFrame = ALPHA_FRAMES[Math.floor(performance.now() / ALPHA_FRAME_MS) % ALPHA_FRAMES.length];
   return (
     <>
       {liveMobs.map((mob) => (
         <div
           aria-label={mobs[mob.type].name}
-          className={`mob${mob.flash ? " mob--hit" : ""}`}
+          className={`mob${mob.flash ? " mob--hit" : ""}${mob.type === "alphaZeno" ? " mob--boss" : ""}`}
           key={mob.id}
           role="img"
           style={{
@@ -176,7 +191,7 @@ export default function OlympusCombat({
           <img
             alt=""
             draggable="false"
-            src={MOB_ART[mob.type]}
+            src={mob.type === "alphaZeno" ? alphaFrame : MOB_ART[mob.type]}
             style={{ transform: mob.facing === "right" ? "scaleX(-1)" : undefined }}
           />
         </div>

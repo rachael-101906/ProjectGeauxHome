@@ -1,82 +1,113 @@
-
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import HUD from "../components/HUD.jsx";
 import ObjectivesMenu from "../components/ObjectivesMenu.jsx";
 import PauseMenu from "../components/PauseMenu.jsx";
 import RoverDialogue from "../components/RoverDialogue.jsx";
-import TradingPost, { ORE_ICONS } from "../screens/TradingPost.jsx";
+import OlympusCombat from "../components/OlympusCombat.jsx";
+import TradingPost, { ORE_ICONS, TRADERS } from "./TradingPost.jsx";
+
 import hughRight from "../components/assets/characters/Hugh.png";
 import hughLeft from "../components/assets/characters/HughL.png";
 import hughSway1 from "../components/assets/characters/HughLSway1.png";
 import hughSway2 from "../components/assets/characters/HughLSway2.png";
-import oreTypes from "../data/ores.js";
-import shop from "../data/shop.js";
-
+import roverSprite from "../components/assets/characters/rover.png";
 import smoke from "../components/assets/icons/pixel-art-32x32-2f.gif";
+import spaceship from "../components/assets/icons/spaceship.png";
 import arcadia from "../components/assets/backgrounds/arcadia.png";
 import albaMons from "../components/assets/backgrounds/alba-mons.png";
 import tempeTerra from "../components/assets/backgrounds/tempe-terra.png";
 import vastitasBorealis from "../components/assets/backgrounds/vastitas-borealis.png";
 import olympusMons from "../components/assets/backgrounds/olympus-basalt.png";
-import spaceship from "../components/assets/icons/spaceship.png";
-import roverSprite from "../components/assets/characters/rover.png";
-import { rover_dialogue, user_dialogue } from "../data/dialogue.js";
+
+import oreTypes from "../data/ores.js";
+import shop from "../data/shop.js";
+import upgrades from "../data/upgrades.js";
+import { BLASTER_ART, DRILL_FRAMES } from "../data/art.js";
+import {
+  rover_dialogue,
+  rover_travel_line,
+  TRADER_DIALOGUE,
+  user_dialogue,
+} from "../data/dialogue.js";
 
 // ============================================
 // GAME CONFIGURATION
 // ============================================
 
+// Movement tuning: percent of the screen crossed per second.
 const MOVE_SPEED_X = 30;
 const MOVE_SPEED_Y = 34;
+// minX/maxX keep Hugh clear of the left and right travel buttons.
+const MOVE_LIMITS = { minX: 10, maxX: 90, minY: 50, maxY: 88 };
+const START_POSITION = { x: 37, y: 86 }; // Right up against the crashed ship's nose.
+const ARRIVAL_POSITION = { x: 50, y: 80 }; // Where Hugh lands on every other map.
 
-const MOVE_LIMITS = {
-  minX: 10,
-  maxX: 90,
-  minY: 50,
-  maxY: 88,
+const WALK_FRAME_SECONDS = 0.16;
+
+// The walk frames (HughLSway1/2) are drawn facing LEFT, like HughL.png.
+// When Hugh walks right we mirror them with scaleX(-1).
+const HUGH_SPRITES = {
+  idleRight: hughRight,
+  idleLeft: hughLeft,
+  walk: [hughSway1, hughSway2],
 };
 
-const START_POSITION = {
-  x: 25,
-  y: 72,
+// R.O.V.E.R. waits on the right side of the crash site (percent of the screen).
+const ROVER_SPOT = { x: 80, y: 53 };
+const ROVER_REACH = { x: 12, y: 10 };
+
+// Ore deposits per map (percent of the screen).
+// Follows data/ores.js: ice @ Vastitas, iron/silica @ Alba Mons + Tempe Terra,
+// sulfur/basalt @ Olympus Mons (mobs + Filter required).
+const ORE_NODES = {
+  arcadia: [],
+  albaMons: [
+    { id: "a1", ore: "iron", x: 35, y: 70 },
+    { id: "a2", ore: "iron", x: 62, y: 82 },
+    { id: "a3", ore: "silica", x: 75, y: 64 },
+  ],
+  tempeTerra: [
+    { id: "t1", ore: "iron", x: 30, y: 78 },
+    { id: "t2", ore: "silica", x: 66, y: 72 },
+  ],
+  olympus: [
+    { id: "o1", ore: "sulfur", x: 24, y: 80 },
+    { id: "o2", ore: "sulfur", x: 48, y: 70 },
+    { id: "o3", ore: "basalt", x: 72, y: 82 },
+  ],
+  vastitas: [
+    { id: "v1", ore: "ice", x: 16, y: 86 },
+    { id: "v2", ore: "ice", x: 60, y: 88 },
+    { id: "v3", ore: "ice", x: 84, y: 80 },
+  ],
+};
+const ORE_REACH = { x: 8, y: 10 };
+const ORE_RESPAWN_MS = 10000;
+
+// Trader stalls at the Vastitas Borealis market (percent of the screen).
+const TRADER_SPOTS = {
+  martian: { x: 26, y: 70 },
+  human: { x: 44, y: 68 },
+  robot: { x: 62, y: 70 },
+};
+const TRADER_REACH = { x: 7, y: 9 };
+const MARKET_LOCATION = "vastitas";
+
+const TOOL_KEYS = { 1: "Drill", 2: "Blaster", 3: "Repair Tool" };
+
+const DEFAULT_WALLET = {
+  tintinas: 0,
+  inventory: { ice: 0, iron: 0, silica: 0, sulfur: 0, basalt: 0 },
+  gear: { drill: 1, hasFilter: false, blasters: [] },
+  upgrades: {},
 };
 
-const ROVER_SPOT = {
-  x: 80,
-  y: 53,
-};
-
-const ROVER_REACH = {
-  x: 12,
-  y: 10,
-};
-
-// A mineable ore deposit appears at this position in each location.
-const MINE_SPOT = { x: 55, y: 75 };
-const MINE_REACH = { x: 9, y: 12 };
 const LOCATION_TITLE_DURATION = 1000;
-const ROVER_RIDE_DURATION = 2200;
-
-const TRANSITION_DURATION = 1200;
 const INTRO_DURATION = 1200;
+const FADE_DURATION = 1000;
 
-const ROVER_ASK_NAME = 0;
-const ROVER_LAST_LINE = rover_dialogue.length - 1;
-const LOCATION_ORES = {
-  arcadia: "iron",
-  albaMons: "silica",
-  tempeTerra: "iron",
-  vastitas: "ice",
-};
-const PICKAXE_DAMAGE = {
-  Drill: 10,
-  T1P: 5,
-  T2P: 10,
-  T3P: 20,
-  T4P: 40,
-};
-
+// Held-key lookup, lowercase so Caps Lock / Shift don't break movement.
 const MOVE_KEYS = {
   arrowleft: "left",
   a: "left",
@@ -88,22 +119,8 @@ const MOVE_KEYS = {
   s: "down",
 };
 
-
-const WALK_ANIMATION_SPEED = 0.16; // Seconds per frame
-
-const HUGH_SPRITES = {
-  right: hughRight,
-  left: hughLeft,
-  sway1: hughSway1,
-  sway2: hughSway2,
-};
-
-const missionObjectives = [
-  { name: "Communication Array", progress: 0 },
-  { name: "Life Support Core", progress: 0 },
-  { name: "Power System", progress: 0 },
-  { name: "Propulsion Engine", progress: 0 },
-];
+const ROVER_ASK_NAME = 0;
+const ROVER_LAST_LINE = rover_dialogue.length - 1;
 
 const locations = [
   { id: "arcadia", name: "ARCADIA PLANITIA", asset: arcadia },
@@ -114,21 +131,22 @@ const locations = [
   { id: "olympus", name: "OLYMPUS MONS", asset: olympusMons, needsFilter: true },
 ];
 
+const LOCATION_SUBTITLES = {
+  arcadia: "CRASH SITE // SECTOR 01",
+  vastitas: "FRONTIER MARKET // SECTOR 04",
+  olympus: "DANGER // ZENOS DETECTED",
+};
+
 // ============================================
 // HELPERS
 // ============================================
 
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 function isTyping(target) {
   return (
     target instanceof HTMLElement &&
-    (
-      target.isContentEditable ||
-      ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)
-    )
+    (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
   );
 }
 
@@ -136,208 +154,197 @@ function getLocation(id) {
   return locations.find((location) => location.id === id) ?? locations[0];
 }
 
+const isNear = (pos, spot, reach) =>
+  Math.abs(pos.x - spot.x) <= reach.x && Math.abs(pos.y - spot.y) <= reach.y;
+
+const bestBlaster = (owned = []) =>
+  shop
+    .filter((item) => item.type === "blaster" && owned.includes(item.id))
+    .sort((a, b) => b.damage - a.damage)[0] ?? null;
+
+const blasterDamage = (owned = []) => bestBlaster(owned)?.damage ?? 1;
+
+const drillDamage = (tier) =>
+  shop.find((item) => item.type === "drill" && item.tier === tier)?.oreDamage ?? 5;
+
+// Older saves stored the drill tier as gear.pickaxe.
+function loadWallet(saved = {}) {
+  const gear = { ...DEFAULT_WALLET.gear, ...(saved.gear || {}) };
+  if (gear.pickaxe && !saved.gear?.drill) gear.drill = gear.pickaxe;
+  delete gear.pickaxe;
+  return {
+    ...DEFAULT_WALLET,
+    ...saved,
+    inventory: { ...DEFAULT_WALLET.inventory, ...(saved.inventory || {}) },
+    gear,
+    upgrades: { ...(saved.upgrades || {}) },
+  };
+}
+
 // ============================================
 // BASE GAME
 // ============================================
 
-export default function Base({
-  onMainMenu,
-  onSave,
-  saveError,
-  savedGame = {},
-}) {
+export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) {
   // ------------------------------------------
   // GAME STATE
   // ------------------------------------------
 
-  const [locationId, setLocationId] = useState(
-    () => getLocation(savedGame.location).id
-  );
-
-  const [selectedTool, setSelectedTool] = useState(
-    savedGame.selectedTool || "Drill"
-  );
-
+  const [locationId, setLocationId] = useState(() => getLocation(savedGame.location).id);
+  const [selectedTool, setSelectedTool] = useState(savedGame.selectedTool || "Drill");
   const [objectivesOpen, setObjectivesOpen] = useState(false);
   const [paused, setPaused] = useState(false);
   const [pauseNotice, setPauseNotice] = useState("");
-
   const [travelTarget, setTravelTarget] = useState(null);
-  const [showTravelArrows, setShowTravelArrows] = useState(
-    savedGame.showTravelArrows ?? false
-  );
 
-  // Dialogue
+  // R.O.V.E.R. dialogue
   const [roverOpen, setRoverOpen] = useState(false);
   const [roverLine, setRoverLine] = useState(ROVER_ASK_NAME);
-
-  // Player interaction
-  const [nearRover, setNearRover] = useState(false);
-  const [oreCount, setOreCount] = useState(() => Math.max(0, Number(savedGame.oreCount) || 0));
-  const [minedLocations, setMinedLocations] = useState(() => Array.isArray(savedGame.minedLocations) ? savedGame.minedLocations : []);
-  const [oreHealth, setOreHealth] = useState(() => savedGame.oreHealth ?? {});
-  const [miningNotice, setMiningNotice] = useState("");
+  const [hughReply, setHughReply] = useState(false);
   const [roverIntroComplete, setRoverIntroComplete] = useState(
     savedGame.roverIntroComplete === true,
   );
 
-  // Cutscene and transitions
+  // Traders: talk = dialogue state, tradingWith = open shop tab.
+  const [traderTalk, setTraderTalk] = useState(null); // { id, mode, index, topic }
+  const [tradingWith, setTradingWith] = useState(null);
+  const [metTraders, setMetTraders] = useState(() =>
+    Array.isArray(savedGame.metTraders) ? savedGame.metTraders : [],
+  );
+
+  // Economy / mining / combat
+  const [wallet, setWallet] = useState(() => loadWallet(savedGame.wallet));
+  const [nodeHealth, setNodeHealth] = useState({});
+  const [miningNotice, setMiningNotice] = useState(null);
+  const [drilling, setDrilling] = useState(false);
+  const [drillFrame, setDrillFrame] = useState(0);
+  const [health, setHealth] = useState(100);
+  const [hurtFlash, setHurtFlash] = useState(0);
+
+  // Proximity prompts
+  const [nearRover, setNearRover] = useState(false);
+  const [nearNodeId, setNearNodeId] = useState(null);
+  const [nearTraderId, setNearTraderId] = useState(null);
+
+  // Cutscenes and transitions
   const [fadeIn, setFadeIn] = useState(true);
   const [fadeToBlack, setFadeToBlack] = useState(false);
-  const [showIntroDialogue, setShowIntroDialogue] = useState(true);
-  const [showMoveTutorial, setShowMoveTutorial] = useState(true);
   const [showLocationTitle, setShowLocationTitle] = useState(true);
   const [charactersVisible, setCharactersVisible] = useState(false);
-  const [roverRide, setRoverRide] = useState(false);
+  const [showIntroDialogue, setShowIntroDialogue] = useState(!savedGame.roverIntroComplete);
+  const [showMoveTutorial, setShowMoveTutorial] = useState(!savedGame.roverIntroComplete);
+  // Ride: null -> "jump" (Hugh hops on) -> "ride" (both drive off) -> fade -> new map.
+  const [rideStage, setRideStage] = useState(null);
 
   // ------------------------------------------
   // REFS
   // ------------------------------------------
+
   const hughRef = useRef(null);
   const hughSpriteRef = useRef(null);
-
-  const facingRef = useRef("right");
-  const walkFrameRef = useRef(0);
-  const walkTimerRef = useRef(0);
-
+  const walkRef = useRef({ facing: "right", frame: 0, timer: 0, src: "", flip: false });
   const positionRef = useRef({
-    x: clamp(savedGame.playerX ?? START_POSITION.x,
-      MOVE_LIMITS.minX, MOVE_LIMITS.maxX),
-    y: clamp(savedGame.playerY ?? START_POSITION.y,
-      MOVE_LIMITS.minY, MOVE_LIMITS.maxY),
+    x: clamp(savedGame.playerX ?? START_POSITION.x, MOVE_LIMITS.minX, MOVE_LIMITS.maxX),
+    y: clamp(savedGame.playerY ?? START_POSITION.y, MOVE_LIMITS.minY, MOVE_LIMITS.maxY),
   });
-
   const heldKeys = useRef(new Set());
   const nearRoverRef = useRef(false);
-  const blockedRef = useRef(false);
-  const miningNoticeTimerRef = useRef(null);
-
-  const transitionTimerRef = useRef(null);
-  const frameRef = useRef(null);
+  const nearNodeRef = useRef(null);
+  const nearTraderRef = useRef(null);
+  const timersRef = useRef([]);
+  const healthRef = useRef(100);
 
   // ------------------------------------------
   // DERIVED STATE
   // ------------------------------------------
 
   const currentLocation = getLocation(locationId);
-
-  const locationIndex = locations.findIndex(
-    (location) => location.id === locationId
-  );
-
-  const previousLocation =
-    locations[
-      (locationIndex - 1 + locations.length) % locations.length
-    ];
-
-  const nextLocation =
-    locations[(locationIndex + 1) % locations.length];
+  const locationIndex = locations.findIndex((location) => location.id === locationId);
+  const previousLocation = locations[(locationIndex - 1 + locations.length) % locations.length];
+  const nextLocation = locations[(locationIndex + 1) % locations.length];
+  const isCrashSite = locationId === "arcadia";
+  const isMarket = locationId === MARKET_LOCATION;
+  const oreNodes = ORE_NODES[locationId] || [];
+  const travelLocked = Boolean(travelTarget?.needsFilter && !wallet.gear.hasFilter);
+  const nextUpgrade = upgrades.find((up) => !wallet.upgrades[up.id]);
+  const currentObjective = !roverIntroComplete
+    ? "Find out where you are. Talk to R.O.V.E.R."
+    : nextUpgrade
+      ? `Repair the ship: install the ${nextUpgrade.name} (Dr. Oxy Genn, Vastitas Borealis).`
+      : "All systems online. Time to geaux home!";
+  const objectiveList = upgrades.map((up) => ({
+    name: up.name,
+    progress: wallet.upgrades[up.id] ? 100 : 0,
+  }));
 
   const movementBlocked =
     paused ||
     objectivesOpen ||
     roverOpen ||
     Boolean(travelTarget) ||
-    roverRide ||
+    Boolean(rideStage) ||
+    Boolean(traderTalk) ||
+    Boolean(tradingWith) ||
     showLocationTitle ||
     !charactersVisible ||
     fadeIn ||
     fadeToBlack;
-
+  const blockedRef = useRef(movementBlocked);
   blockedRef.current = movementBlocked;
 
+  // Read by the animation loop, which is bound once.
+  const locationRef = useRef(locationId);
+  locationRef.current = locationId;
+
   // ------------------------------------------
-  // SAVE HELPERS
+  // TIMERS / SAVE HELPERS
   // ------------------------------------------
+
+  const later = useCallback((fn, ms) => {
+    const id = window.setTimeout(fn, ms);
+    timersRef.current.push(id);
+    return id;
+  }, []);
+
+  useEffect(() => () => timersRef.current.forEach((id) => window.clearTimeout(id)), []);
+
+  // Latest values for saves fired from timers / the animation loop.
+  const saveStateRef = useRef({});
+  saveStateRef.current = {
+    selectedTool,
+    location: locationId,
+    wallet,
+    roverIntroComplete,
+    metTraders,
+  };
 
   const saveProgress = useCallback(
     (updates = {}) => {
       onSave?.({
-        selectedTool,
-        location: locationId,
+        ...saveStateRef.current,
         playerX: positionRef.current.x,
         playerY: positionRef.current.y,
-        showTravelArrows,
-        oreCount,
-        minedLocations,
-        oreHealth,
-        roverIntroComplete,
         ...updates,
       });
     },
-    [
-      onSave,
-      selectedTool,
-      locationId,
-      showTravelArrows,
-      oreCount,
-      minedLocations,
-      oreHealth,
-      roverIntroComplete,
-    ]
+    [onSave],
   );
 
-  const mineResource = useCallback(() => {
-    const { x, y } = positionRef.current;
-    const closeEnough =
-      Math.abs(x - MINE_SPOT.x) <= MINE_REACH.x &&
-      Math.abs(y - MINE_SPOT.y) <= MINE_REACH.y;
+  function updateWallet(next) {
+    setWallet(next);
+    saveProgress({ wallet: next });
+  }
 
-    if (!closeEnough) {
-      setMiningNotice("MOVE CLOSER TO MINE");
-    } else if (!(selectedTool in PICKAXE_DAMAGE)) {
-      setMiningNotice("SELECT THE DRILL TO MINE");
-    } else if (minedLocations.includes(locationId)) {
-      setMiningNotice("THIS DEPOSIT IS EMPTY");
-    } else {
-      const oreId = LOCATION_ORES[locationId] ?? "ice";
-      const ore = oreTypes[oreId];
-      const currentHealth = oreHealth[locationId] ?? ore.health;
-      const damage = PICKAXE_DAMAGE[selectedTool];
-      const remainingHealth = Math.max(0, currentHealth - damage);
-      const nextOreHealth = { ...oreHealth, [locationId]: remainingHealth };
-
-      setOreHealth(nextOreHealth);
-
-      if (remainingHealth > 0) {
-        setMiningNotice(`HIT ${oreId.toUpperCase()}: ${remainingHealth} HP LEFT`);
-        saveProgress({ oreHealth: nextOreHealth });
-      } else {
-        const nextMinedLocations = [...minedLocations, locationId];
-        const nextOreCount = oreCount + 1;
-        setOreCount(nextOreCount);
-        setMinedLocations(nextMinedLocations);
-        setMiningNotice(`MINED ${oreId.toUpperCase()} +1 MARTIAN ORE`);
-        saveProgress({
-          oreCount: nextOreCount,
-          minedLocations: nextMinedLocations,
-          oreHealth: nextOreHealth,
-        });
-      }
-    }
-
-    if (miningNoticeTimerRef.current) {
-      window.clearTimeout(miningNoticeTimerRef.current);
-    }
-    miningNoticeTimerRef.current = window.setTimeout(() => {
-      setMiningNotice("");
-    }, 1800);
-  }, [selectedTool, minedLocations, locationId, oreCount, oreHealth, saveProgress]);
-
-  const mineResourceRef = useRef(mineResource);
-  mineResourceRef.current = mineResource;
-  const saveProgressRef = useRef(saveProgress);
-  saveProgressRef.current = saveProgress;
+  function flashNotice(text) {
+    setMiningNotice({ text, id: Date.now() });
+  }
 
   // ------------------------------------------
-  // OPENING FADE
+  // OPENING FADE + LOCATION TITLE CARD
   // ------------------------------------------
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setFadeIn(false);
-    }, INTRO_DURATION);
-
+    const timer = window.setTimeout(() => setFadeIn(false), INTRO_DURATION);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -345,107 +352,274 @@ export default function Base({
   useEffect(() => {
     setShowLocationTitle(true);
     setCharactersVisible(false);
-
-    const titleTimer = window.setTimeout(() => {
+    setNodeHealth({}); // Fresh deposits each time Hugh arrives on a map.
+    const timer = window.setTimeout(() => {
       setShowLocationTitle(false);
       setCharactersVisible(true);
-      setFadeIn(false);
     }, LOCATION_TITLE_DURATION);
-
-    return () => window.clearTimeout(titleTimer);
+    return () => window.clearTimeout(timer);
   }, [locationId]);
 
   // ------------------------------------------
-  // POSITION RENDERING
+  // DRILL ANIMATION
   // ------------------------------------------
 
-  const updatePlayerPosition = useCallback(() => {
-    const element = hughRef.current;
-    if (!element) return;
-
-    const { x, y } = positionRef.current;
-
-    element.style.left = `${x}%`;
-    element.style.top = `${y}%`;
-  }, []);
-
-  // Keep player positioning consistent when the
-  // active location changes.
   useEffect(() => {
-    updatePlayerPosition();
-  }, [locationId, updatePlayerPosition]);
-
-  // ------------------------------------------
-  // R.O.V.E.R. PROXIMITY
-  // ------------------------------------------
-
-  const checkRoverProximity = useCallback(() => {
-    if (locationId !== "arcadia") {
-      nearRoverRef.current = false;
-      setNearRover(false);
-      return;
+    if (!drilling) {
+      setDrillFrame(0);
+      return undefined;
     }
+    const id = window.setInterval(() => setDrillFrame((f) => (f + 1) % 3), 70);
+    return () => window.clearInterval(id);
+  }, [drilling]);
 
-    const { x, y } = positionRef.current;
+  // ------------------------------------------
+  // POSITION + SPRITE RENDERING
+  // ------------------------------------------
 
-    const near =
-      Math.abs(x - ROVER_SPOT.x) <= ROVER_REACH.x &&
-      Math.abs(y - ROVER_SPOT.y) <= ROVER_REACH.y;
-
-    if (near !== nearRoverRef.current) {
-      nearRoverRef.current = near;
-      setNearRover(near);
+  function resetHughTo(position) {
+    Object.assign(positionRef.current, position);
+    const el = hughRef.current;
+    if (el) {
+      el.style.left = `${position.x}%`;
+      el.style.top = `${position.y}%`;
     }
-  }, [locationId]);
+  }
 
-  // ------------------------------------------
-  // PLAYER SPRITE ANIMATION
-  // ------------------------------------------
+  function setFacing(facing) {
+    walkRef.current.facing = facing;
+    if (hughRef.current) hughRef.current.dataset.facing = facing;
+  }
 
-  function updateHughSprite(moving, dx, dt) {
+  // Idle: Hugh.png (right) / HughL.png (left).
+  // Walking: alternate the two sway frames; they face left, so mirror them when walking right.
+  // Only touches the DOM when the frame actually changes.
+  function renderHughSprite(moving, dx, dt) {
+    const walk = walkRef.current;
     const sprite = hughSpriteRef.current;
-    if (!sprite) return;
+    if (dx > 0) setFacing("right");
+    else if (dx < 0) setFacing("left");
 
-    // Update facing only when moving horizontally.
-    if (dx > 0) {
-      facingRef.current = "right";
-    } else if (dx < 0) {
-      facingRef.current = "left";
-    }
-
+    let src;
+    let flip = false;
     if (!moving) {
-      walkTimerRef.current = 0;
-      walkFrameRef.current = 0;
-      sprite.src = HUGH_SPRITES[facingRef.current];
-      return;
+      walk.timer = 0;
+      walk.frame = 0;
+      src = walk.facing === "right" ? HUGH_SPRITES.idleRight : HUGH_SPRITES.idleLeft;
+    } else {
+      walk.timer += dt;
+      if (walk.timer >= WALK_FRAME_SECONDS) {
+        walk.timer %= WALK_FRAME_SECONDS;
+        walk.frame = (walk.frame + 1) % HUGH_SPRITES.walk.length;
+      }
+      src = HUGH_SPRITES.walk[walk.frame];
+      flip = walk.facing === "right";
     }
 
-    walkTimerRef.current += dt;
-
-    if (walkTimerRef.current >= WALK_ANIMATION_SPEED) {
-      walkTimerRef.current %= WALK_ANIMATION_SPEED;
-      walkFrameRef.current = 1 - walkFrameRef.current;
+    if (sprite && (src !== walk.src || flip !== walk.flip)) {
+      walk.src = src;
+      walk.flip = flip;
+      sprite.src = src;
+      sprite.style.transform = flip ? "scaleX(-1)" : "";
     }
-
-    sprite.src =
-      walkFrameRef.current === 0
-        ? HUGH_SPRITES.sway1
-        : HUGH_SPRITES.sway2;
   }
 
   // ------------------------------------------
-  // MOVEMENT SYSTEM
+  // MINING
   // ------------------------------------------
+
+  function findNearbyNode() {
+    return oreNodes.find((node) => isNear(positionRef.current, node, ORE_REACH));
+  }
+
+  function findNearbyTrader() {
+    if (locationRef.current !== MARKET_LOCATION) return null;
+    return (
+      Object.keys(TRADER_SPOTS).find((id) =>
+        isNear(positionRef.current, TRADER_SPOTS[id], TRADER_REACH),
+      ) ?? null
+    );
+  }
+
+  function drillNode(node) {
+    if (!node) return;
+    if (selectedTool !== "Drill") return flashNotice("EQUIP THE DRILL [1]");
+    const type = oreTypes[node.ore];
+    if (type.needsFilter && !wallet.gear.hasFilter)
+      return flashNotice("NEED A SULFUR FILTER (DJ-TMONEY)");
+    const current = nodeHealth[node.id] ?? type.health;
+    if (current <= 0) return flashNotice("DEPOSIT DEPLETED");
+
+    setDrilling(true);
+    later(() => setDrilling(false), 280);
+    const remaining = Math.max(0, current - drillDamage(wallet.gear.drill));
+    setNodeHealth((h) => ({ ...h, [node.id]: remaining }));
+
+    if (remaining === 0) {
+      updateWallet({
+        ...wallet,
+        inventory: {
+          ...wallet.inventory,
+          [node.ore]: (wallet.inventory[node.ore] || 0) + 1,
+        },
+      });
+      flashNotice(`+1 ${node.ore.toUpperCase()}`);
+      later(() => setNodeHealth((h) => ({ ...h, [node.id]: type.health })), ORE_RESPAWN_MS);
+    } else {
+      flashNotice(`${node.ore.toUpperCase()}: ${remaining} HP LEFT`);
+    }
+  }
+
+  // ------------------------------------------
+  // COMBAT
+  // ------------------------------------------
+
+  function hurtHugh(damage) {
+    setHurtFlash(Date.now());
+    healthRef.current = Math.max(0, healthRef.current - damage);
+    if (healthRef.current === 0) {
+      // Blacked out: R.O.V.E.R. drags Hugh back to the crash site.
+      healthRef.current = 100;
+      flashNotice("YOU BLACKED OUT... R.O.V.E.R. HAULED YOU HOME");
+      changeLocation(getLocation("arcadia"));
+    }
+    setHealth(healthRef.current);
+  }
+
+  const walletRef = useRef(wallet);
+  walletRef.current = wallet;
+  function rewardKill(reward, name) {
+    const w = walletRef.current;
+    updateWallet({ ...w, tintinas: w.tintinas + reward });
+    flashNotice(`${name.toUpperCase()} DOWN! +${reward} T`);
+  }
+
+  // ------------------------------------------
+  // LOCATION CHANGES
+  // ------------------------------------------
+
+  function changeLocation(destination) {
+    const spawn = destination.id === "arcadia" ? START_POSITION : ARRIVAL_POSITION;
+    heldKeys.current.clear();
+    resetHughTo(spawn);
+    setLocationId(destination.id);
+    setNearRover(false);
+    nearRoverRef.current = false;
+    setShowIntroDialogue(false);
+    setShowMoveTutorial(false);
+    saveProgress({ location: destination.id, playerX: spawn.x, playerY: spawn.y });
+  }
+
+  // Hugh hops on R.O.V.E.R., they drive off, fade, and arrive at `destination`.
+  function rideRover(destination) {
+    closeRover();
+    heldKeys.current.clear();
+    setShowIntroDialogue(false);
+    setShowMoveTutorial(false);
+    setRoverIntroComplete(true);
+    setFacing(positionRef.current.x < ROVER_SPOT.x ? "right" : "left");
+    setRideStage("jump");
+    // Wait a frame so the --jumping transition class is applied before Hugh moves.
+    later(() => resetHughTo({ x: ROVER_SPOT.x - 1, y: ROVER_SPOT.y - 6 }), 30); // land on his deck
+    later(() => setRideStage("ride"), 800);
+    later(() => setFadeToBlack(true), 2600);
+    later(() => {
+      setRideStage(null);
+      changeLocation(destination);
+      saveProgress({ location: destination.id, roverIntroComplete: true });
+      if (destination.id === MARKET_LOCATION)
+        later(() => flashNotice("WALK UP TO A TRADER AND PRESS [E]"), LOCATION_TITLE_DURATION + 100);
+      setFadeToBlack(false);
+    }, 2600 + FADE_DURATION);
+  }
+
+  function confirmTravel() {
+    if (!travelTarget || travelLocked || fadeToBlack) return;
+    const destination = travelTarget;
+    heldKeys.current.clear();
+    setTravelTarget(null);
+    setFadeToBlack(true);
+    later(() => {
+      changeLocation(destination);
+      setFadeToBlack(false);
+    }, FADE_DURATION);
+  }
+
+  // ------------------------------------------
+  // TRADER DIALOGUE
+  // ------------------------------------------
+
+  function openTrader(id) {
+    heldKeys.current.clear();
+    if (metTraders.includes(id)) {
+      setTraderTalk({ id, mode: "menu", firstMenu: true });
+    } else {
+      setTraderTalk({ id, mode: "intro", index: 0 });
+      const nextMet = [...metTraders, id];
+      setMetTraders(nextMet);
+      saveProgress({ metTraders: nextMet });
+    }
+  }
+
+  function closeTrader() {
+    setTraderTalk(null);
+  }
+
+  function traderView(talk) {
+    const data = TRADER_DIALOGUE[talk.id];
+    const menuActions = [
+      {
+        label: "LET'S TRADE",
+        onClick: () => {
+          setTraderTalk(null);
+          setTradingWith(talk.id);
+        },
+      },
+      ...data.topics.map((topic, index) => ({
+        label: topic.label,
+        onClick: () => setTraderTalk({ id: talk.id, mode: "reply", topic: index }),
+      })),
+      { label: "GOODBYE", onClick: () => setTraderTalk({ id: talk.id, mode: "bye" }) },
+    ];
+
+    if (talk.mode === "intro") {
+      // The last intro line goes straight into the menu.
+      const last = talk.index >= data.intro.length - 1;
+      return {
+        message: data.intro[talk.index],
+        actions: last
+          ? menuActions
+          : [{ label: "CONTINUE", onClick: () => setTraderTalk({ ...talk, index: talk.index + 1 }) }],
+      };
+    }
+    if (talk.mode === "reply") {
+      return {
+        message: data.topics[talk.topic].reply,
+        actions: [{ label: "BACK", onClick: () => setTraderTalk({ id: talk.id, mode: "menu" }) }],
+      };
+    }
+    if (talk.mode === "bye") {
+      return { message: data.farewell, actions: [{ label: "LEAVE", onClick: closeTrader }] };
+    }
+    // Menu: "welcome back" on a repeat visit, otherwise the follow-up prompt.
+    return { message: talk.firstMenu ? data.repeat : data.prompt, actions: menuActions };
+  }
+
+  // ------------------------------------------
+  // KEYBOARD + ANIMATION LOOP
+  // ------------------------------------------
+
+  // Latest handlers for the loop (which is bound once).
+  const actionRef = useRef({});
+  actionRef.current = { drillNode, findNearbyNode, findNearbyTrader, openTrader, setSelectedTool: selectTool };
 
   useEffect(() => {
     const held = heldKeys.current;
 
     function onKeyDown(event) {
       if (isTyping(event.target)) return;
-
       const key = event.key.toLowerCase();
 
-      // Interact with R.O.V.E.R. or mine nearby ore with E.
       if (key === "e" && !event.repeat && !blockedRef.current) {
         if (nearRoverRef.current) {
           event.preventDefault();
@@ -454,33 +628,29 @@ export default function Base({
           setShowIntroDialogue(false);
           return;
         }
-
-        const { x, y } = positionRef.current;
-        const nearMine =
-          Math.abs(x - MINE_SPOT.x) <= MINE_REACH.x &&
-          Math.abs(y - MINE_SPOT.y) <= MINE_REACH.y;
-
-        if (nearMine) {
+        if (nearTraderRef.current) {
           event.preventDefault();
-          held.clear();
-          mineResourceRef.current();
+          actionRef.current.openTrader(nearTraderRef.current);
+          return;
+        }
+        const node = actionRef.current.findNearbyNode();
+        if (node) {
+          event.preventDefault();
+          actionRef.current.drillNode(node);
           return;
         }
       }
 
-      const direction = MOVE_KEYS[key];
-
-      if (!direction) return;
-
-      if (event.ctrlKey || event.metaKey || event.altKey) {
+      if (!blockedRef.current && TOOL_KEYS[event.key]) {
+        actionRef.current.setSelectedTool(TOOL_KEYS[event.key]);
         return;
       }
 
+      const direction = MOVE_KEYS[key];
+      if (!direction || event.ctrlKey || event.metaKey || event.altKey) return;
       if (blockedRef.current) return;
-
       event.preventDefault();
       held.add(direction);
-
       setShowMoveTutorial(false);
       setShowIntroDialogue(false);
     }
@@ -490,128 +660,94 @@ export default function Base({
       if (direction) held.delete(direction);
     }
 
-    function releaseAll() {
-      held.clear();
+    const releaseAll = () => held.clear();
 
-      if (hughRef.current) {
-        delete hughRef.current.dataset.walking;
-      }
-    }
-
-    let lastTime = performance.now();
+    let frame;
+    let last = performance.now();
 
     function tick(now) {
-      const dt = Math.min(0.05, (now - lastTime) / 1000);
-      lastTime = now;
-
-      const element = hughRef.current;
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
 
       let dx = 0;
       let dy = 0;
-
-      if (!blockedRef.current) {
-        dx =
-          Number(held.has("right")) -
-          Number(held.has("left"));
-
-        dy =
-          Number(held.has("down")) -
-          Number(held.has("up"));
-      } else {
+      if (blockedRef.current) {
         held.clear();
+      } else {
+        dx = Number(held.has("right")) - Number(held.has("left"));
+        dy = Number(held.has("down")) - Number(held.has("up"));
       }
-
       const moving = dx !== 0 || dy !== 0;
 
       if (moving) {
-        const magnitude = Math.hypot(dx, dy);
-
-        dx /= magnitude;
-        dy /= magnitude;
-
+        const length = Math.hypot(dx, dy); // keep diagonals the same speed
         const position = positionRef.current;
-
-        position.x = clamp(
-          position.x + dx * MOVE_SPEED_X * dt,
-          MOVE_LIMITS.minX,
-          MOVE_LIMITS.maxX
-        );
-
-        position.y = clamp(
-          position.y + dy * MOVE_SPEED_Y * dt,
-          MOVE_LIMITS.minY,
-          MOVE_LIMITS.maxY
-        );
-
+        position.x = clamp(position.x + (dx / length) * MOVE_SPEED_X * dt, MOVE_LIMITS.minX, MOVE_LIMITS.maxX);
+        position.y = clamp(position.y + (dy / length) * MOVE_SPEED_Y * dt, MOVE_LIMITS.minY, MOVE_LIMITS.maxY);
+        const element = hughRef.current;
         if (element) {
           element.style.left = `${position.x}%`;
           element.style.top = `${position.y}%`;
         }
       }
+      if (hughRef.current) {
+        if (moving) hughRef.current.dataset.walking = "true";
+        else delete hughRef.current.dataset.walking;
+      }
+      renderHughSprite(moving, dx, dt);
 
-      if (element) {
-        element.dataset.walking = String(moving);
+      // Proximity prompts
+      const near =
+        locationRef.current === "arcadia" && isNear(positionRef.current, ROVER_SPOT, ROVER_REACH);
+      if (near !== nearRoverRef.current) {
+        nearRoverRef.current = near;
+        setNearRover(near);
       }
       const nodeId = actionRef.current.findNearbyNode()?.id ?? null;
       if (nodeId !== nearNodeRef.current) {
         nearNodeRef.current = nodeId;
         setNearNodeId(nodeId);
       }
+      const traderId = actionRef.current.findNearbyTrader();
+      if (traderId !== nearTraderRef.current) {
+        nearTraderRef.current = traderId;
+        setNearTraderId(traderId);
+      }
 
-      updateHughSprite(moving, dx, dt);
-      checkRoverProximity();
-
-      frameRef.current = requestAnimationFrame(tick);
+      frame = requestAnimationFrame(tick);
     }
 
-    frameRef.current = requestAnimationFrame(tick);
-
+    frame = requestAnimationFrame(tick);
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
     window.addEventListener("blur", releaseAll);
-
     return () => {
-      cancelAnimationFrame(frameRef.current);
-
+      cancelAnimationFrame(frame);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", releaseAll);
-
       held.clear();
     };
-  }, [checkRoverProximity]);
+    // renderHughSprite only touches refs, so binding once is safe.
+  }, []);
 
   // ------------------------------------------
-  // PAUSE / OBJECTIVES CONTROLS
+  // PAUSE / OBJECTIVES / ESCAPE
   // ------------------------------------------
 
   useEffect(() => {
     function handleKeyDown(event) {
       if (isTyping(event.target)) return;
-
       const key = event.key.toLowerCase();
 
       if (key === "escape" || key === "p") {
         event.preventDefault();
-
-        if (travelTarget) {
-          setTravelTarget(null);
-          return;
-        }
-
-        if (roverOpen) {
-          setRoverOpen(false);
-          setRoverLine(ROVER_ASK_NAME);
-          return;
-        }
-
-        if (key === "escape" && objectivesOpen && !paused) {
-          setObjectivesOpen(false);
-          return;
-        }
-
-        if (fadeToBlack || fadeIn) return;
-
+        if (travelTarget) return setTravelTarget(null);
+        if (roverOpen) return closeRover();
+        if (traderTalk) return closeTrader();
+        if (tradingWith) return setTradingWith(null);
+        if (key === "escape" && objectivesOpen && !paused) return setObjectivesOpen(false);
+        if (fadeToBlack || fadeIn || rideStage) return;
         setObjectivesOpen(false);
         setPaused((value) => !value);
         setPauseNotice("");
@@ -622,379 +758,198 @@ export default function Base({
 
       if (key === "tab") {
         event.preventDefault();
-
         setObjectivesOpen((value) => !value);
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [
-    objectivesOpen,
-    paused,
-    roverOpen,
-    travelTarget,
-    fadeToBlack,
-    fadeIn,
-  ]);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [objectivesOpen, paused, roverOpen, travelTarget, traderTalk, tradingWith, fadeToBlack, fadeIn, rideStage]);
 
   // ------------------------------------------
-  // DIALOGUE
+  // R.O.V.E.R. DIALOGUE
   // ------------------------------------------
 
-  const closeRover = useCallback(() => {
+  function closeRover() {
     setRoverOpen(false);
     setRoverLine(ROVER_ASK_NAME);
-  }, []);
-
-  // After the introductory dialogue, Hugh can ride R.O.V.E.R. to any location.
-  const beginRoverRide = useCallback((destination = getLocation("vastitas")) => {
-    heldKeys.current.clear();
-    setRoverOpen(false);
-    setRoverRide(true);
-    setShowIntroDialogue(false);
-    setShowMoveTutorial(false);
-    setRoverIntroComplete(true);
-    setShowTravelArrows(true);
-
-    transitionTimerRef.current = window.setTimeout(() => {
-      setFadeToBlack(true);
-      transitionTimerRef.current = window.setTimeout(() => {
-        positionRef.current = { ...START_POSITION };
-        setLocationId(destination.id);
-        setNearRover(false);
-        nearRoverRef.current = false;
-        setRoverRide(false);
-        setFadeToBlack(false);
-        setShowLocationTitle(true);
-        setCharactersVisible(false);
-        setShowIntroDialogue(false);
-        setShowMoveTutorial(false);
-        saveProgressRef.current({
-          location: destination.id,
-          playerX: START_POSITION.x,
-          playerY: START_POSITION.y,
-          showTravelArrows: true,
-          roverIntroComplete: true,
-        });
-        updatePlayerPosition();
-      }, TRANSITION_DURATION);
-    }, ROVER_RIDE_DURATION);
-  }, [updatePlayerPosition]);
-
-  const roverActions = roverIntroComplete
-    ? locations
-        .filter((location) => location.id !== locationId)
-        .map((destination) => ({
-          label: `TRAVEL TO ${destination.name}`,
-          onClick: () => beginRoverRide(destination),
-        }))
-    : roverLine === ROVER_ASK_NAME
-      ? user_dialogue.map((label, index) => ({
-          label,
-          onClick: () => {
-            if (index === 0) {
-              setRoverLine(1);
-            } else {
-              closeRover();
-            }
-          },
-        }))
-      : roverLine < ROVER_LAST_LINE
-      ? [
-          {
-            label: "CONTINUE",
-            onClick: () => {
-              setRoverLine((line) => line + 1);
-            },
-          },
-        ]
-      : [
-          {
-            label: "LET'S GO",
-            onClick: beginRoverRide,
-          },
-        ];
-
-  // ------------------------------------------
-  // TRAVEL SYSTEM
-  // ------------------------------------------
-
-  const startTravel = useCallback(
-    (destination) => {
-      if (movementBlocked) return;
-
-      if (destination.id === locationId) return;
-
-      setTravelTarget(destination);
-    },
-    [movementBlocked, locationId]
-  );
-
-  function confirmTravel() {
-    if (!travelTarget || fadeToBlack) return;
-
-    const destination = travelTarget;
-
-    // Stop movement before transitioning.
-    heldKeys.current.clear();
-
-    setTravelTarget(null);
-    setFadeToBlack(true);
-
-    // Fade to black, update map, then fade in.
-    transitionTimerRef.current = window.setTimeout(() => {
-      setLocationId(destination.id);
-
-      // Restore default spawn for the destination.
-      // Later, replace with per-map spawn points.
-      positionRef.current = { ...START_POSITION };
-
-      setNearRover(false);
-      nearRoverRef.current = false;
-
-      setShowIntroDialogue(false);
-      setShowMoveTutorial(false);
-
-      setFadeToBlack(false);
-      setShowLocationTitle(true);
-      setCharactersVisible(false);
-
-      // Save the new destination and position.
-      saveProgress({
-        location: destination.id,
-        playerX: START_POSITION.x,
-        playerY: START_POSITION.y,
-      });
-
-      updatePlayerPosition();
-    }, TRANSITION_DURATION);
+    setHughReply(false);
   }
 
-  // Clean up pending transition timers.
-  useEffect(() => {
-    return () => {
-      if (transitionTimerRef.current) {
-        window.clearTimeout(transitionTimerRef.current);
-      }
-      if (miningNoticeTimerRef.current) {
-        window.clearTimeout(miningNoticeTimerRef.current);
-      }
-    };
-  }, []);
+  const roverActions = roverIntroComplete
+    ? [
+        ...locations
+          .filter((location) => location.id !== locationId)
+          .map((destination) => ({
+            label: `${destination.name}${destination.needsFilter && !wallet.gear.hasFilter ? " (NEED FILTER)" : ""}`,
+            onClick: () =>
+              destination.needsFilter && !wallet.gear.hasFilter
+                ? (closeRover(), flashNotice("BUY A FILTER FROM DJ-TMONEY FIRST"))
+                : rideRover(destination),
+          })),
+        { label: "NOT NOW", onClick: closeRover },
+      ]
+    : hughReply
+      ? [{ label: "CONTINUE", onClick: () => { setHughReply(false); setRoverLine(1); } }]
+      : roverLine === ROVER_ASK_NAME
+        ? user_dialogue.map((label, index) => ({
+            label,
+            onClick: index === 0 ? () => setHughReply(true) : closeRover,
+          }))
+        : roverLine < ROVER_LAST_LINE
+          ? [{ label: "CONTINUE", onClick: () => setRoverLine((line) => line + 1) }]
+          : [
+              { label: "HOP ON R.O.V.E.R.", onClick: () => rideRover(getLocation(MARKET_LOCATION)) },
+              { label: "NOT YET", onClick: closeRover },
+            ];
+
+  const roverMessage = roverIntroComplete
+    ? rover_travel_line
+    : hughReply
+      ? user_dialogue[0]
+      : rover_dialogue[roverLine];
 
   // ------------------------------------------
   // TOOL SELECTION
   // ------------------------------------------
 
-  function handleSelectTool(tool) {
+  function selectTool(tool) {
     setSelectedTool(tool);
-
-    saveProgress({
-      selectedTool: tool,
-    });
+    saveProgress({ selectedTool: tool });
   }
 
   // ============================================
   // RENDER
   // ============================================
 
+  const blaster = bestBlaster(wallet.gear.blasters);
+  const toolIcons = {
+    Drill: DRILL_FRAMES[clamp(wallet.gear.drill, 1, 4)]?.[0],
+    Blaster: blaster ? BLASTER_ART[blaster.id] : BLASTER_ART.t1b,
+  };
+  const talkingTrader = traderTalk && TRADERS.find((t) => t.id === traderTalk.id);
+  const traderLine = traderTalk && traderView(traderTalk);
+
   return (
-    <main
-      className="mission-screen"
-      style={{
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      {/* ================================== */}
-      {/* FADE OVERLAY                       */}
-      {/* ================================== */}
-
-      <div
-        className={`black-fade ${
-          fadeIn || fadeToBlack ? "black-fade--active" : ""
-        }`}
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundColor: "black",
-          zIndex: 99,
-          pointerEvents: "none",
-          transition: "opacity 1.2s ease-in-out",
-          opacity: fadeIn || fadeToBlack ? 1 : 0,
-        }}
-      />
-
-      {roverRide && (
-        <div className="rover-ride-cutscene" aria-label="Hugh rides away with R.O.V.E.R.">
-          <span className="rover-ride-cutscene__rover">
-            <img src={roverSprite} alt="" draggable="false" />
-          </span>
-          <img className="rover-ride-cutscene__hugh" src={hughRight} alt="" draggable="false" />
-        </div>
-      )}
-
-      {/* ================================== */}
-      {/* MOVEMENT TUTORIAL                  */}
-      {/* ================================== */}
-
-      {showMoveTutorial && charactersVisible && (
-        <div
-          className="movement-popup"
-          style={{
-            position: "absolute",
-            top: "15%",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 30,
-            backgroundColor: "rgba(10, 15, 25, 0.9)",
-            border: "2px solid #52B2BF",
-            color: "#FFF",
-            padding: "10px 20px",
-            borderRadius: "4px",
-            fontFamily: "monospace",
-            textAlign: "center",
-            boxShadow: "0 0 10px rgba(82, 178, 191, 0.5)",
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontSize: "14px",
-              fontWeight: "bold",
-            }}
-          >
-            USE ARROW KEYS OR [W][A][S][D] TO MOVE
-          </p>
-
-          <button
-            onClick={() => setShowMoveTutorial(false)}
-            style={{
-              marginTop: "6px",
-              background: "transparent",
-              border: "1px solid #52B2BF",
-              color: "#52B2BF",
-              fontSize: "10px",
-              cursor: "pointer",
-              padding: "2px 8px",
-            }}
-            type="button"
-          >
-            DISMISS
-          </button>
-        </div>
-      )}
-
-      {/* ================================== */}
-      {/* WORLD / LANDSCAPE                 */}
-      {/* ================================== */}
-
+    <main className="mission-screen">
       <div
         aria-hidden="true"
         className="mission-landscape mission-landscape--image"
-        style={{
-          backgroundImage: `url("${currentLocation.asset}")`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
+        style={{ backgroundImage: `url("${currentLocation.asset}")` }}
       >
-        {/* CRASH SITE */}
-
-        {charactersVisible && (
+        {/* The crashed ship only exists at the crash site (Arcadia). */}
+        {isCrashSite && charactersVisible && (
           <div className="mission-crash-site">
-            <img
-              className="mission-ship"
-              src={spaceship}
-              alt=""
-              draggable="false"
-            />
-
-            <img
-              className="mission-ship-smoke"
-              src={smoke}
-              alt=""
-              draggable="false"
-              style={{
-                position: "absolute",
-                transform: "translate(-8px, -14px)",
-              }}
-            />
+            <img className="mission-ship" src={spaceship} alt="" draggable="false" />
+            <img className="mission-ship-smoke" src={smoke} alt="" draggable="false" />
           </div>
         )}
       </div>
 
-      {/* A simple pixel-style ore deposit. Press E nearby while using the Drill. */}
-      {charactersVisible && !minedLocations.includes(locationId) && (
-        <button
-          className="mine-node"
-          onClick={mineResource}
-          style={{ left: `${MINE_SPOT.x}%`, top: `${MINE_SPOT.y}%` }}
-          type="button"
-          aria-label="Mine the nearby ore deposit"
-        >
-          <span className="mine-node__rock" aria-hidden="true">◆</span>
-          <span className="mine-node__label">
-            {LOCATION_ORES[locationId]?.toUpperCase() ?? "ORE"} [E]
-          </span>
-        </button>
-      )}
+      {/* ORE DEPOSITS */}
+      {charactersVisible &&
+        oreNodes.map((node) => {
+          const max = oreTypes[node.ore].health;
+          const hp = nodeHealth[node.id] ?? max;
+          return (
+            <button
+              aria-label={`Drill ${node.ore}`}
+              className={`ore-node${hp <= 0 ? " ore-node--empty" : ""}`}
+              key={node.id}
+              onClick={() => !movementBlocked && drillNode(node)}
+              style={{ left: `${node.x}%`, top: `${node.y}%` }}
+              type="button"
+            >
+              <img alt="" draggable="false" src={ORE_ICONS[node.ore]} />
+              <span className="ore-node__bar">
+                <span style={{ width: `${(hp / max) * 100}%` }} />
+              </span>
+              {nearNodeId === node.id && hp > 0 && !movementBlocked && (
+                <span className="rover-npc__prompt">[E] DRILL {node.ore.toUpperCase()}</span>
+              )}
+            </button>
+          );
+        })}
 
-      {miningNotice && (
-        <div className="mining-notice" role="status">{miningNotice}</div>
-      )}
+      {/* TRADERS (Vastitas Borealis market) */}
+      {isMarket &&
+        charactersVisible &&
+        TRADERS.map((trader) => (
+          <TraderNpc
+            key={trader.id}
+            trader={trader}
+            spot={TRADER_SPOTS[trader.id]}
+            near={nearTraderId === trader.id && !movementBlocked}
+            onClick={() => !movementBlocked && openTrader(trader.id)}
+          />
+        ))}
 
-      {charactersVisible && (
-        <div className="ore-counter" aria-live="polite">MARTIAN ORE: {oreCount}</div>
-      )}
-
-      {/* ================================== */}
-      {/* PLAYER                             */}
-      {/* ================================== */}
-
+      {/* PLAYER */}
       <div
         aria-label="Hugh Mann"
-        className="hugh-mann"
+        className={`hugh-mann${rideStage === "jump" ? " hugh-mann--jumping" : ""}${
+          rideStage === "ride" ? " hugh-mann--hidden" : ""
+        }${drilling ? " hugh-mann--drilling" : ""}`}
+        data-facing="right"
         ref={hughRef}
         role="img"
         style={{
           left: `${positionRef.current.x}%`,
           top: `${positionRef.current.y}%`,
-          position: "absolute",
           opacity: charactersVisible ? 1 : 0,
-          transition: "opacity 250ms steps(2, end)",
         }}
       >
-        {currentLocation.id === "arcadia" && showIntroDialogue && (
-          <div className="hugh-speech-bubble">
+        {isCrashSite && showIntroDialogue && !roverIntroComplete && charactersVisible && (
+          <div className="speech-bubble speech-bubble--hugh" role="status">
             Ughh... where am I?
           </div>
         )}
-
         <img
-          ref={hughSpriteRef}
-          src={HUGH_SPRITES.right}
           alt=""
+          className="hugh-mann__img"
           draggable="false"
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "block",
-            objectFit: "contain",
-            imageRendering: "pixelated",
-          }}
+          ref={hughSpriteRef}
+          src={HUGH_SPRITES.idleRight}
         />
+        {selectedTool === "Drill" && (
+          <img
+            alt=""
+            aria-hidden="true"
+            className="hugh-drill"
+            draggable="false"
+            src={DRILL_FRAMES[clamp(wallet.gear.drill, 1, 4)]?.[drillFrame]}
+          />
+        )}
+        {selectedTool === "Blaster" && blaster && (
+          <img
+            alt=""
+            aria-hidden="true"
+            className="hugh-blaster"
+            draggable="false"
+            src={BLASTER_ART[blaster.id]}
+          />
+        )}
       </div>
 
-      {/* ================================== */}
-      {/* R.O.V.E.R. NPC                     */}
-      {/* ================================== */}
+      {locationId === "olympus" && charactersVisible && (
+        <OlympusCombat
+          armed={selectedTool === "Blaster"}
+          blasterDamage={blasterDamage(wallet.gear.blasters)}
+          hughPosition={positionRef}
+          hughRef={hughRef}
+          onHurt={hurtHugh}
+          onKill={rewardKill}
+          paused={movementBlocked}
+        />
+      )}
+      {hurtFlash > 0 && <div className="hurt-flash" key={hurtFlash} aria-hidden="true" />}
 
-      {charactersVisible && (
+      {miningNotice && (
+        <p className="mining-notice" key={miningNotice.id}>{miningNotice.text}</p>
+      )}
+
+      {/* R.O.V.E.R. NPC */}
+      {isCrashSite && charactersVisible && rideStage !== "ride" && (
         <button
           aria-label="Talk to R.O.V.E.R."
           className="rover-npc"
@@ -1004,147 +959,63 @@ export default function Base({
               setShowIntroDialogue(false);
             }
           }}
-          style={{
-            left: `${ROVER_SPOT.x}%`,
-            top: `${ROVER_SPOT.y}%`,
-            position: "absolute",
-            background: "none",
-            border: "none",
-            cursor: movementBlocked ? "default" : "pointer",
-            opacity: charactersVisible ? 1 : 0,
-            transition: "opacity 250ms steps(2, end)",
-            pointerEvents: charactersVisible ? "auto" : "none",
-          }}
+          style={{ left: `${ROVER_SPOT.x}%`, top: `${ROVER_SPOT.y}%` }}
           type="button"
         >
-          {showIntroDialogue && (
-            <div
-              style={{
-                position: "absolute",
-                bottom: "110%",
-                left: "50%",
-                transform: "translateX(-50%)",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                pointerEvents: "none",
-              }}
-            >
-              <span
-                className="rover-icon-badge"
-                style={{
-                  backgroundColor: "#FFCC00",
-                  color: "#000",
-                  borderRadius: "50%",
-                  width: "16px",
-                  height: "16px",
-                  fontSize: "11px",
-                  fontWeight: "bold",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: "4px",
-                }}
-              >
-                !
-              </span>
-
-              <div
-                style={{
-                  backgroundColor: "#102A43",
-                  color: "#9FB3C8",
-                  border: "1px solid #bcccdc",
-                  padding: "3px 6px",
-                  borderRadius: "4px",
-                  fontSize: "11px",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Hey over here!
-              </div>
-            </div>
-          )}
-
-          <span className="rover-npc__art">
-            <img
-              alt=""
-              draggable="false"
-              src={roverSprite}
-            />
-          </span>
-
-          {nearRover && !movementBlocked && (
-            <span className="rover-npc__prompt">
-              [E] TALK
+          {showIntroDialogue && !roverIntroComplete && !nearRover && (
+            <span className="speech-bubble speech-bubble--npc">
+              <span className="speech-bubble__alert" aria-hidden="true">!</span>
+              Hey, over here!
             </span>
           )}
+          <span className="rover-npc__art">
+            <img alt="" draggable="false" src={roverSprite} />
+          </span>
+          {nearRover && !movementBlocked && <span className="rover-npc__prompt">[E] TALK</span>}
         </button>
       )}
 
-      {/* ================================== */}
-      {/* R.O.V.E.R. DIALOGUE                */}
-      {/* ================================== */}
-
-      {roverOpen && (
-        <div
-          className="rover-dialogue-panel"
-          style={{
-            position: "absolute",
-            bottom: "20px",
-            right: "20px",
-            zIndex: 50,
-          }}
-        >
-          <RoverDialogue
-            actions={roverActions}
-            key={roverLine}
-            message={
-              roverIntroComplete
-                ? "Beep boop. I can take you anywhere. Choose a destination."
-                : rover_dialogue[roverLine]
-            }
-          />
+      {/* MOVEMENT TUTORIAL */}
+      {showMoveTutorial && charactersVisible && !roverOpen && (
+        <div className="speech-bubble speech-bubble--toast" role="status">
+          USE ARROW KEYS OR [W][A][S][D] TO MOVE
+          <button
+            className="speech-bubble__dismiss"
+            onClick={() => setShowMoveTutorial(false)}
+            type="button"
+          >
+            DISMISS
+          </button>
         </div>
       )}
 
-      {/* ================================== */}
-      {/* LOCATION HEADER                   */}
-      {/* ================================== */}
-
+      {/* LOCATION TITLE CARD */}
       {showLocationTitle && (
         <header className="mission-location location-title-splash">
           <p className="game-eyebrow">PROJECT GEAUX HOME // MISSION 01</p>
           <h1>{currentLocation.name}</h1>
-          <p>
-            {currentLocation.id === "arcadia"
-              ? "CRASH SITE // SECTOR 01"
-              : "TRAVEL ROUTE // SECTOR 02"}
-          </p>
+          <p>{LOCATION_SUBTITLES[locationId] ?? "TRAVEL ROUTE // SECTOR 02"}</p>
         </header>
       )}
 
-      {/* ================================== */}
-      {/* LOCATION NAVIGATION               */}
-      {/* ================================== */}
-
-      {showTravelArrows && charactersVisible && (
+      {/* EDGE TRAVEL (unlocked after meeting R.O.V.E.R.) */}
+      {roverIntroComplete && charactersVisible && (
         <>
           <button
             aria-label={`Travel toward ${previousLocation.name}`}
             className="edge-travel edge-travel--left"
             disabled={movementBlocked}
-            onClick={() => startTravel(previousLocation)}
+            onClick={() => setTravelTarget(previousLocation)}
             type="button"
           >
             <span aria-hidden="true">‹</span>
             <small>{previousLocation.name}</small>
           </button>
-
           <button
             aria-label={`Travel toward ${nextLocation.name}`}
             className="edge-travel edge-travel--right"
             disabled={movementBlocked}
-            onClick={() => startTravel(nextLocation)}
+            onClick={() => setTravelTarget(nextLocation)}
             type="button"
           >
             <small>{nextLocation.name}</small>
@@ -1153,94 +1024,123 @@ export default function Base({
         </>
       )}
 
-      {/* ================================== */}
-      {/* SAVE ERRORS                       */}
-      {/* ================================== */}
-
       {saveError && (
-        <p
-          aria-live="assertive"
-          className="mission-save-error"
-          role="alert"
-        >
+        <p aria-live="assertive" className="mission-save-error" role="alert">
           SAVE ERROR: {saveError}
         </p>
       )}
 
-      {/* ================================== */}
-      {/* HUD                                */}
-      {/* ================================== */}
-
-      {/* ================================== */}
-      {/* GAME ACTIONS                       */}
-      {/* ================================== */}
-
       {charactersVisible && (
-      <div className="mission-actions">
-        <button
-          className="game-button"
-          onClick={() => {
-            if (!paused && !movementBlocked) {
-              setObjectivesOpen(true);
-            }
-          }}
-          type="button"
-        >
-          OBJECTIVES [TAB]
-        </button>
-
-        <button
-          className="game-button"
-          onClick={() => {
-            if (movementBlocked) return;
-
-            setObjectivesOpen(false);
-            setPaused(true);
-          }}
-          type="button"
-        >
-          PAUSE [ESC]
-        </button>
-      </div>
+        <HUD
+          health={health}
+          currentObjective={currentObjective}
+          onSelectTool={selectTool}
+          selectedTool={selectedTool}
+          toolIcons={toolIcons}
+        />
       )}
 
-      {/* ================================== */}
-      {/* OBJECTIVES MENU                    */}
-      {/* ================================== */}
+      {/* R.O.V.E.R. DIALOGUE */}
+      {roverOpen && (
+        <aside className="rover-tab rover-tab--open">
+          <RoverDialogue
+            actions={roverActions}
+            key={`${roverIntroComplete}-${roverLine}-${hughReply ? "hugh" : "rover"}`}
+            message={roverMessage}
+            speaker={hughReply ? "HUGH MANN" : "R.O.V.E.R."}
+          />
+        </aside>
+      )}
+
+      {/* TRADER DIALOGUE */}
+      {traderTalk && talkingTrader && (
+        <aside className="rover-tab rover-tab--open">
+          <RoverDialogue
+            actions={traderLine.actions}
+            key={JSON.stringify(traderTalk)}
+            message={traderLine.message}
+            portrait={talkingTrader.frames?.[0]}
+            portraitText={talkingTrader.portrait}
+            speaker={TRADER_DIALOGUE[traderTalk.id].speaker}
+          />
+        </aside>
+      )}
+
+      {rideStage === "ride" && (
+        <div
+          aria-hidden="true"
+          className="rover-ride"
+          style={{ left: `${ROVER_SPOT.x}%`, top: `${ROVER_SPOT.y}%` }}
+        >
+          <span
+            className="hugh-mann__sprite rover-ride__hugh"
+            style={{ backgroundImage: `url("${hughRight}")` }}
+          />
+          <span className="rover-npc__art">
+            <img alt="" draggable="false" src={roverSprite} />
+          </span>
+        </div>
+      )}
+
+      {tradingWith && (
+        <TradingPost
+          initialTraderId={tradingWith}
+          onChange={updateWallet}
+          onLeave={() => setTradingWith(null)}
+          wallet={wallet}
+        />
+      )}
+
+      <div className={`black-fade${fadeIn || fadeToBlack ? " black-fade--active" : ""}`} />
+
+      {charactersVisible && (
+        <div className="mission-actions">
+          <button
+            className="game-button"
+            onClick={() => !paused && !movementBlocked && setObjectivesOpen(true)}
+            type="button"
+          >
+            OBJECTIVES [TAB]
+          </button>
+          <button
+            className="game-button"
+            onClick={() => {
+              if (movementBlocked) return;
+              setObjectivesOpen(false);
+              setPaused(true);
+            }}
+            type="button"
+          >
+            PAUSE [ESC]
+          </button>
+        </div>
+      )}
 
       <ObjectivesMenu
         isOpen={objectivesOpen && !paused}
-        objectives={savedGame.objectives || missionObjectives}
+        objective={currentObjective}
+        objectives={objectiveList}
         onClose={() => setObjectivesOpen(false)}
       />
-
-      {/* ================================== */}
-      {/* PAUSE MENU                         */}
-      {/* ================================== */}
 
       {paused && (
         <PauseMenu
           onControls={() =>
-            setPauseNotice("TAB: OBJECTIVES // ESC OR P: RESUME")
+            setPauseNotice("WASD MOVE // E INTERACT // 1-3 TOOLS // SPACE FIRE // TAB OBJECTIVES")
           }
-          onMainMenu={onMainMenu}
-          onQuit={() =>
-            setPauseNotice("CLOSE THIS BROWSER TAB TO QUIT THE GAME.")
-          }
+          onMainMenu={() => {
+            saveProgress();
+            onMainMenu();
+          }}
+          onQuit={() => setPauseNotice("CLOSE THIS BROWSER TAB TO QUIT THE GAME.")}
           onResume={() => {
             setPaused(false);
             setPauseNotice("");
           }}
-          onSettings={() =>
-            setPauseNotice("NO CONFIGURABLE SETTINGS YET.")
-          }
+          onSettings={() => setPauseNotice("NO CONFIGURABLE SETTINGS YET.")}
           notice={pauseNotice}
         />
       )}
-
-      {/* ================================== */}
-      {/* TRAVEL CONFIRMATION                */}
-      {/* ================================== */}
 
       {travelTarget && (
         <div
@@ -1250,18 +1150,15 @@ export default function Base({
           aria-labelledby="travel-prompt-title"
         >
           <section className="game-panel travel-prompt__panel">
-            <p className="game-eyebrow">
-              EDGE OF SECTOR
-            </p>
-
-            <h2 id="travel-prompt-title">
-              TRAVEL TO {travelTarget.name}?
-            </h2>
-
+            <p className="game-eyebrow">EDGE OF SECTOR</p>
+            <h2 id="travel-prompt-title">TRAVEL TO {travelTarget.name}?</h2>
             <p>
-              The route ahead will move you away from the crash site.
+              {travelLocked
+                ? "The sulfur air will choke you. Buy a FILTER from DJ-TMoney at the Vastitas market first."
+                : travelTarget.needsFilter
+                  ? "Filter equipped. Zenos roam here: equip the BLASTER [2] and fire with SPACE or click."
+                  : "The route ahead will move you away from the crash site."}
             </p>
-
             <div className="travel-prompt__actions">
               <button
                 className="game-button"
@@ -1271,12 +1168,7 @@ export default function Base({
               >
                 {travelLocked ? "NEED FILTER" : "TRAVEL"}
               </button>
-
-              <button
-                className="game-button"
-                onClick={() => setTravelTarget(null)}
-                type="button"
-              >
+              <button className="game-button" onClick={() => setTravelTarget(null)} type="button">
                 STAY HERE
               </button>
             </div>
@@ -1285,5 +1177,33 @@ export default function Base({
       )}
     </main>
   );
+}
 
+// A trader standing at their stall. Marty animates through his 3 frames.
+function TraderNpc({ trader, spot, near, onClick }) {
+  const [frame, setFrame] = useState(0);
+  const frames = trader.frames?.filter(Boolean) ?? [];
+  useEffect(() => {
+    if (frames.length < 2) return undefined;
+    const id = window.setInterval(() => setFrame((f) => (f + 1) % frames.length), 400);
+    return () => window.clearInterval(id);
+  }, [frames.length]);
+
+  return (
+    <button
+      aria-label={`Talk to ${trader.name}`}
+      className="trader-npc"
+      onClick={onClick}
+      style={{ left: `${spot.x}%`, top: `${spot.y}%` }}
+      type="button"
+    >
+      {near && <span className="rover-npc__prompt">[E] TALK</span>}
+      {frames.length ? (
+        <img alt="" className="trader-npc__art" draggable="false" src={frames[frame % frames.length]} />
+      ) : (
+        <span className="trader-npc__art trader-npc__art--emoji" aria-hidden="true">{trader.portrait}</span>
+      )}
+      <span className="trader-npc__name">{trader.name}</span>
+    </button>
+  );
 }

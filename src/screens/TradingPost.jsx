@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { MARTY_FRAMES, T_BIT } from "../data/art.js";
+import { BLASTER_ART, CAPTAIN_HUMAN, DRILL_FRAMES, MARTY_FRAMES, T_BIT, UPGRADE_ART } from "../data/art.js";
+import { TRADER_LINES } from "../data/dialogue.js";
 import "../components/game-ui.css";
 
 import sellOres from "../data/sellOres.js";
@@ -21,27 +22,27 @@ export const ORE_ICONS = {
 };
 
 // Traders. `frames` = animated sprite art; `portrait` = emoji placeholder until art exists.
-const TRADERS = [
+export const TRADERS = [
   {
     id: "martian",
     name: "MARTY McMARS",
     role: "ORE BUYER",
     frames: MARTY_FRAMES,
-    greeting: "Ooh, shiny rocks! Marty pays top Tintinas. Mostly top. Sometimes.",
+    greeting: TRADER_LINES.martian,
   },
   {
     id: "human",
     name: "DJ-TMONEY",
     role: "GEAR DEALER",
-    portrait: "🧑‍🚀",
-    greeting: "Fresh drills, fresh blasters, fresh beats. Cash only, space cowboy.",
+    frames: [CAPTAIN_HUMAN],
+    greeting: TRADER_LINES.human,
   },
   {
     id: "robot",
     name: "DR. OXY GENN",
     role: "SHIP UPGRADES",
-    portrait: "🤖",
-    greeting: "Bring me raw materials and I will make your ship fly. Probably.",
+    portrait: "🤖", // TODO: no robot trader art yet
+    greeting: TRADER_LINES.robot,
   },
 ];
 
@@ -53,7 +54,7 @@ const formatCost = (cost) =>
 function TraderPortrait({ trader, animate }) {
   const [frame, setFrame] = useState(0);
   useEffect(() => {
-    if (!trader.frames || !animate) return undefined;
+    if (!trader.frames || trader.frames.length < 2 || !animate) return undefined;
     const id = window.setInterval(() => setFrame((f) => (f + 1) % trader.frames.length), 350);
     return () => window.clearInterval(id);
   }, [trader.frames, animate]);
@@ -66,8 +67,15 @@ function TraderPortrait({ trader, animate }) {
 
 const Coin = () => <img className="t-bit" src={T_BIT} alt="T" />;
 
-export default function TradingPost({ wallet, onChange, onLeave }) {
-  const [traderId, setTraderId] = useState("martian");
+// Shop icon for a gear item (drills use frame 1 of their tier, blasters use weapon art).
+function gearIcon(item) {
+  if (item.type === "drill") return DRILL_FRAMES[item.tier]?.[0];
+  if (item.type === "blaster") return BLASTER_ART[item.id];
+  return null;
+}
+
+export default function TradingPost({ wallet, onChange, onLeave, initialTraderId = "martian" }) {
+  const [traderId, setTraderId] = useState(initialTraderId);
   const [notice, setNotice] = useState("");
   const trader = TRADERS.find((t) => t.id === traderId);
   const { tintinas, inventory, gear, upgrades: installed } = wallet;
@@ -92,10 +100,10 @@ export default function TradingPost({ wallet, onChange, onLeave }) {
   }
 
   function gearStatus(item) {
-    if (item.type === "pickaxe" && gear.pickaxe >= item.tier) return "OWNED";
+    if (item.type === "drill" && gear.drill >= item.tier) return "OWNED";
     if (item.type === "filter" && gear.hasFilter) return "OWNED";
     if (item.type === "blaster" && gear.blasters?.includes(item.id)) return "OWNED";
-    if (item.type === "pickaxe" && item.tier !== gear.pickaxe + 1) return "LOCKED";
+    if (item.type === "drill" && item.tier !== gear.drill + 1) return "LOCKED";
     if (tintinas < item.cost) return "NEED T";
     return null;
   }
@@ -103,7 +111,7 @@ export default function TradingPost({ wallet, onChange, onLeave }) {
   function buyGear(item) {
     if (gearStatus(item)) return;
     const nextGear = { ...gear };
-    if (item.type === "pickaxe") nextGear.pickaxe = item.tier;
+    if (item.type === "drill") nextGear.drill = item.tier;
     if (item.type === "filter") nextGear.hasFilter = true;
     if (item.type === "blaster") nextGear.blasters = [...(gear.blasters || []), item.id];
     commit(
@@ -116,8 +124,11 @@ export default function TradingPost({ wallet, onChange, onLeave }) {
     return Object.entries(cost).every(([id, n]) => (inventory[id] || 0) >= n);
   }
 
+  // Systems must be installed in order (Comm -> Life -> Fusion -> Propulsion).
+  const prereqsMet = (up) => (up.requires || []).every((id) => installed[id]);
+
   function install(up) {
-    if (installed[up.id] || !canAfford(up.cost)) return;
+    if (installed[up.id] || !prereqsMet(up) || !canAfford(up.cost)) return;
     const nextInv = { ...inventory };
     for (const [id, n] of Object.entries(up.cost)) nextInv[id] -= n;
     commit(
@@ -186,6 +197,7 @@ export default function TradingPost({ wallet, onChange, onLeave }) {
               return (
                 <li key={item.id}>
                   <span className="trading-post__item">
+                    {gearIcon(item) && <img src={gearIcon(item)} alt="" />}
                     {item.name}
                     <small>{item.description}{item.oreDamage ? ` · ${item.oreDamage} DRILL DMG` : ""}</small>
                   </span>
@@ -203,16 +215,17 @@ export default function TradingPost({ wallet, onChange, onLeave }) {
             upgrades.map((up) => (
               <li key={up.id}>
                 <span className="trading-post__item">
+                  {UPGRADE_ART[up.id] && <img src={UPGRADE_ART[up.id]} alt="" />}
                   {up.name.toUpperCase()}
-                  <small>COST: {formatCost(up.cost)}</small>
+                  <small>{up.description} · COST: {formatCost(up.cost)}</small>
                 </span>
                 <button
                   className="game-button"
-                  disabled={Boolean(installed[up.id]) || !canAfford(up.cost)}
+                  disabled={Boolean(installed[up.id]) || !prereqsMet(up) || !canAfford(up.cost)}
                   onClick={() => install(up)}
                   type="button"
                 >
-                  {installed[up.id] ? "INSTALLED" : "INSTALL"}
+                  {installed[up.id] ? "INSTALLED" : !prereqsMet(up) ? "LOCKED" : "INSTALL"}
                 </button>
               </li>
             ))}
