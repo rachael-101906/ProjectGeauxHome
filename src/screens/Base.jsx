@@ -8,14 +8,21 @@ import arcadia from "../components/assets/backgrounds/arcadia.png";
 import albaMons from "../components/assets/backgrounds/alba-mons.png";
 import tempeTerra from "../components/assets/backgrounds/tempe-terra.png";
 import vastitasBorealis from "../components/assets/backgrounds/vastitas-borealis.png";
+import roverSprite from "../components/assets/backgrounds/rover.png";
 import RoverDialogue from "../components/RoverDialogue.jsx";
 import { rover_dialogue, user_dialogue } from "../data/dialogue.js";
 
 // Movement tuning: percent of the screen crossed per second.
 const MOVE_SPEED_X = 30;
 const MOVE_SPEED_Y = 34;
-const MOVE_LIMITS = { minX: 6, maxX: 94, minY: 50, maxY: 88 };
+// minX/maxX keep Hugh clear of the left and right travel buttons.
+const MOVE_LIMITS = { minX: 10, maxX: 90, minY: 50, maxY: 88 };
 const START_POSITION = { x: 50, y: 72 };
+
+// R.O.V.E.R. waits on the right side of the crash site (percent of the screen).
+// Hugh can press E when he is within ROVER_REACH of it.
+const ROVER_SPOT = { x: 80, y: 53 };
+const ROVER_REACH = { x: 12, y: 10 };
 
 // Held-key lookup, lowercase so Caps Lock / Shift don't break movement.
 const MOVE_KEYS = {
@@ -66,6 +73,8 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
   const hughRef = useRef(null);
   const positionRef = useRef({ ...START_POSITION });
   const heldKeys = useRef(new Set());
+  const nearRoverRef = useRef(false);
+  const [nearRover, setNearRover] = useState(false);
   const movementBlocked = paused || objectivesOpen || roverOpen || Boolean(travelTarget);
   const blockedRef = useRef(movementBlocked);
   blockedRef.current = movementBlocked;
@@ -98,6 +107,17 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
     const held = heldKeys.current;
 
     function onKeyDown(event) {
+      if (
+        event.key.toLowerCase() === "e" &&
+        !event.repeat &&
+        nearRoverRef.current &&
+        !blockedRef.current
+      ) {
+        event.preventDefault();
+        setRoverOpen(true);
+        return;
+      }
+
       const direction = MOVE_KEYS[event.key.toLowerCase()];
       if (!direction || event.ctrlKey || event.metaKey || event.altKey) return;
       if (blockedRef.current) return;
@@ -142,6 +162,16 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
         }
       } else if (hughRef.current?.dataset.walking) {
         delete hughRef.current.dataset.walking;
+      }
+
+      // Only re-render when Hugh walks into or out of R.O.V.E.R.'s reach.
+      const { x, y } = positionRef.current;
+      const near =
+        Math.abs(x - ROVER_SPOT.x) <= ROVER_REACH.x &&
+        Math.abs(y - ROVER_SPOT.y) <= ROVER_REACH.y;
+      if (near !== nearRoverRef.current) {
+        nearRoverRef.current = near;
+        setNearRover(near);
       }
 
       frame = requestAnimationFrame(tick);
@@ -239,6 +269,23 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
           </div>
         )}
       </div>
+
+      {currentLocation.id === "arcadia" && (
+        <button
+          aria-label="Talk to R.O.V.E.R."
+          className="rover-npc"
+          onClick={() => !movementBlocked && setRoverOpen(true)}
+          style={{ left: `${ROVER_SPOT.x}%`, top: `${ROVER_SPOT.y}%` }}
+          type="button"
+        >
+          <span className="rover-npc__art">
+            <img alt="" draggable="false" src={roverSprite} />
+          </span>
+          {nearRover && !movementBlocked && (
+            <span className="rover-npc__prompt">[E] TALK</span>
+          )}
+        </button>
+      )}
 
       <header className="mission-location">
         <p className="game-eyebrow">PROJECT GEAUX HOME // MISSION 01</p>
