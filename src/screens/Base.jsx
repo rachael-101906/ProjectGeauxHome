@@ -8,6 +8,7 @@ import hughRight from "../components/assets/characters/Hugh.png";
 import hughLeft from "../components/assets/characters/HughL.png";
 import oreTypes from "../data/ores.js";
 import shop from "../data/shop.js";
+import { DRILL_FRAMES } from "../data/art.js";
 
 import smoke from "../components/assets/icons/pixel-art-32x32-2f.gif";
 import spaceship from "../components/assets/icons/spaceship.png";
@@ -115,6 +116,14 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const [nodeHealth, setNodeHealth] = useState({});
   const [miningNotice, setMiningNotice] = useState(null);
   const [drilling, setDrilling] = useState(false);
+  const [drillFrame, setDrillFrame] = useState(0);
+
+  // Cycle the 3 drill frames while drilling.
+  useEffect(() => {
+    if (!drilling) return setDrillFrame(0);
+    const id = window.setInterval(() => setDrillFrame((f) => (f + 1) % 3), 70);
+    return () => window.clearInterval(id);
+  }, [drilling]);
 
   // Hugh's position lives in a ref and is written straight to the element each frame
   const hughRef = useRef(null);
@@ -179,7 +188,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     if (current <= 0) return flashNotice("DEPOSIT DEPLETED");
 
     setDrilling(true);
-    window.setTimeout(() => setDrilling(false), 250);
+    window.setTimeout(() => setDrilling(false), 280);
     const remaining = Math.max(0, current - drillDamage(wallet.gear.pickaxe));
     setNodeHealth((h) => ({ ...h, [node.id]: remaining }));
 
@@ -476,7 +485,15 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         }}
       >
         <span className="hugh-mann__sprite" />
-        {selectedTool === "Drill" && <span className="hugh-drill" aria-hidden="true" />}
+        {selectedTool === "Drill" && (
+          <img
+            alt=""
+            aria-hidden="true"
+            className="hugh-drill"
+            draggable="false"
+            src={DRILL_FRAMES[Math.min(4, wallet.gear.pickaxe)]?.[drillFrame]}
+          />
+        )}
       </div>
 
       {miningNotice && (

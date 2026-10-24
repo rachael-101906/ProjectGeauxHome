@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { MARTY_FRAMES, T_BIT } from "../data/art.js";
 import "../components/game-ui.css";
 
 import sellOres from "../data/sellOres.js";
@@ -19,13 +20,13 @@ export const ORE_ICONS = {
   basalt: basaltIcon,
 };
 
-// PLACEHOLDER traders. Swap `portrait` for real art when it exists.
+// Traders. `frames` = animated sprite art; `portrait` = emoji placeholder until art exists.
 const TRADERS = [
   {
     id: "martian",
     name: "MARTY McMARS",
     role: "ORE BUYER",
-    portrait: "👽",
+    frames: MARTY_FRAMES,
     greeting: "Ooh, shiny rocks! Marty pays top Tintinas. Mostly top. Sometimes.",
   },
   {
@@ -48,6 +49,22 @@ const formatCost = (cost) =>
   Object.entries(cost)
     .map(([id, amount]) => `${amount} ${id.toUpperCase()}`)
     .join(" + ");
+
+function TraderPortrait({ trader, animate }) {
+  const [frame, setFrame] = useState(0);
+  useEffect(() => {
+    if (!trader.frames || !animate) return undefined;
+    const id = window.setInterval(() => setFrame((f) => (f + 1) % trader.frames.length), 350);
+    return () => window.clearInterval(id);
+  }, [trader.frames, animate]);
+  return (
+    <span className="trading-post__portrait" aria-hidden="true">
+      {trader.frames ? <img src={trader.frames[frame]} alt="" /> : trader.portrait}
+    </span>
+  );
+}
+
+const Coin = () => <img className="t-bit" src={T_BIT} alt="T" />;
 
 export default function TradingPost({ wallet, onChange, onLeave }) {
   const [traderId, setTraderId] = useState("martian");
@@ -118,7 +135,7 @@ export default function TradingPost({ wallet, onChange, onLeave }) {
             <h2>MARS TRADING POST</h2>
           </div>
           <div className="trading-post__wallet">
-            <strong>{tintinas} T</strong>
+            <strong><Coin /> {tintinas}</strong>
             <div className="trading-post__ores">
               {Object.keys(ORE_ICONS).map((id) => (
                 <span key={id} title={id}>
@@ -137,7 +154,7 @@ export default function TradingPost({ wallet, onChange, onLeave }) {
               onClick={() => { setTraderId(t.id); setNotice(""); }}
               type="button"
             >
-              <span className="trading-post__portrait" aria-hidden="true">{t.portrait}</span>
+              <TraderPortrait animate={t.id === traderId} trader={t} />
               <span>
                 {t.name}
                 <small>{t.role}</small>

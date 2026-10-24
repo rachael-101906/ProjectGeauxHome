@@ -1190,39 +1190,16 @@ progress::-moz-progress-bar {
 .hugh-mann[data-walking] .hugh-mann__sprite { animation: hugh-bob 320ms steps(2, end) infinite; }
 @keyframes hugh-bob { 50% { transform: translateY(-3px); } }
 
-/* Pixel drill: grey body, orange grip, pointed bit. Mirrors when facing left. */
+/* Drill sprite (src/components/characters/DrillT{tier}_{frame}.png) held in Hugh's hand. */
 .hugh-drill {
-  height: 12px;
-  left: 62%;
+  image-rendering: pixelated;
+  left: 50%;
+  pointer-events: none;
   position: absolute;
-  top: 54%;
-  width: 26px;
+  top: 40%;
+  width: 44px;
 }
-.hugh-drill::before { /* body + grip */
-  background: linear-gradient(90deg, #f29a38 0 30%, #9aa3a8 30% 100%);
-  border: 2px solid #22262b;
-  content: "";
-  height: 10px;
-  left: 0;
-  position: absolute;
-  top: 0;
-  width: 16px;
-}
-.hugh-drill::after { /* bit */
-  background: #d7dde0;
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
-  content: "";
-  height: 10px;
-  left: 18px;
-  position: absolute;
-  top: 2px;
-  width: 10px;
-}
-.hugh-mann[data-facing="left"] .hugh-drill { left: auto; right: 62%; transform: scaleX(-1); }
-.hugh-mann--drilling .hugh-drill { animation: drill-buzz 60ms steps(2) infinite; }
-.hugh-mann[data-facing="left"].hugh-mann--drilling .hugh-drill { animation-name: drill-buzz-left; }
-@keyframes drill-buzz { 50% { translate: 2px 1px; } }
-@keyframes drill-buzz-left { 50% { translate: -2px 1px; } }
+.hugh-mann[data-facing="left"] .hugh-drill { left: auto; right: 50%; transform: scaleX(-1); }
 
 /* Hop onto R.O.V.E.R. */
 .hugh-mann--jumping {
@@ -1393,3 +1370,5 @@ progress::-moz-progress-bar {
   .trading-post__tabs { grid-template-columns: 1fr; }
   .trading-post__list li { align-items: flex-start; flex-direction: column; }
 }
+.trading-post__portrait img { image-rendering: pixelated; width: 100%; }
+.t-bit { image-rendering: pixelated; vertical-align: middle; width: 18px; }
