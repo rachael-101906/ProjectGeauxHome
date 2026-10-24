@@ -5,28 +5,22 @@ import HUD from "../components/HUD.jsx";
 import ObjectivesMenu from "../components/ObjectivesMenu.jsx";
 import PauseMenu from "../components/PauseMenu.jsx";
 import RoverDialogue from "../components/RoverDialogue.jsx";
-import TradingPost, { ORE_ICONS } from "./TradingPost.jsx";
+import TradingPost, { ORE_ICONS } from "../screens/TradingPost.jsx";
 import hughRight from "../components/assets/characters/Hugh.png";
 import hughLeft from "../components/assets/characters/HughL.png";
+import hughSway1 from "../components/assets/characters/HughLSway1.png";
+import hughSway2 from "../components/assets/characters/HughLSway2.png";
 import oreTypes from "../data/ores.js";
 import shop from "../data/shop.js";
-import { DRILL_FRAMES } from "../data/art.js";
 
 import smoke from "../components/assets/icons/pixel-art-32x32-2f.gif";
 import arcadia from "../components/assets/backgrounds/arcadia.png";
 import albaMons from "../components/assets/backgrounds/alba-mons.png";
 import tempeTerra from "../components/assets/backgrounds/tempe-terra.png";
 import vastitasBorealis from "../components/assets/backgrounds/vastitas-borealis.png";
+import olympusMons from "../components/assets/backgrounds/olympus-basalt.png";
 import spaceship from "../components/assets/icons/spaceship.png";
 import roverSprite from "../components/assets/characters/rover.png";
-import ores from "../data/ores.js";
-
-import hugh from "../components/assets/characters/Hugh.png";
-import hughLeft from "../components/assets/characters/HughL.png";
-import hughSway1 from "../components/assets/characters/HughLSway1.png";
-import hughSway2 from "../components/assets/characters/HughLSway2.png";
-
-
 import { rover_dialogue, user_dialogue } from "../data/dialogue.js";
 
 // ============================================
@@ -98,7 +92,7 @@ const MOVE_KEYS = {
 const WALK_ANIMATION_SPEED = 0.16; // Seconds per frame
 
 const HUGH_SPRITES = {
-  right: hugh,
+  right: hughRight,
   left: hughLeft,
   sway1: hughSway1,
   sway2: hughSway2,
@@ -297,7 +291,7 @@ export default function Base({
       setMiningNotice("THIS DEPOSIT IS EMPTY");
     } else {
       const oreId = LOCATION_ORES[locationId] ?? "ice";
-      const ore = ores[oreId];
+      const ore = oreTypes[oreId];
       const currentHealth = oreHealth[locationId] ?? ore.health;
       const damage = PICKAXE_DAMAGE[selectedTool];
       const remainingHealth = Math.max(0, currentHealth - damage);
@@ -840,7 +834,7 @@ export default function Base({
           <span className="rover-ride-cutscene__rover">
             <img src={roverSprite} alt="" draggable="false" />
           </span>
-          <img className="rover-ride-cutscene__hugh" src={hugh} alt="" draggable="false" />
+          <img className="rover-ride-cutscene__hugh" src={hughRight} alt="" draggable="false" />
         </div>
       )}
 
