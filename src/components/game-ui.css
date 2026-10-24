@@ -1372,3 +1372,33 @@ progress::-moz-progress-bar {
 }
 .trading-post__portrait img { image-rendering: pixelated; width: 100%; }
 .t-bit { image-rendering: pixelated; vertical-align: middle; width: 18px; }
+
+/* ===== Olympus combat ===== */
+.mob {
+  pointer-events: none;
+  position: absolute;
+  transform: translate(-50%, -100%);
+  z-index: 4;
+}
+.mob img { display: block; image-rendering: pixelated; width: 100%; }
+.mob--hit img { filter: brightness(3) saturate(0); }
+.mob__bar { background: #071018; border: 1px solid #ff6b6b; display: block; height: 4px; margin-bottom: 2px; }
+.mob__bar span { background: #ff6b6b; display: block; height: 100%; }
+.blaster-shot {
+  image-rendering: pixelated;
+  pointer-events: none;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  z-index: 5;
+}
+.hurt-flash {
+  animation: hurt-flash 300ms ease-out forwards;
+  background: rgba(255, 40, 40, .35);
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 19;
+}
+@keyframes hurt-flash { to { opacity: 0; } }
+.travel-prompt .game-button:disabled { cursor: not-allowed; opacity: .45; }

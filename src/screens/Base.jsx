@@ -16,6 +16,8 @@ import arcadia from "../components/assets/backgrounds/arcadia.png";
 import albaMons from "../components/assets/backgrounds/alba-mons.png";
 import tempeTerra from "../components/assets/backgrounds/tempe-terra.png";
 import vastitasBorealis from "../components/assets/backgrounds/vastitas-borealis.png";
+import olympusMons from "../components/assets/backgrounds/olympus-sulfer.png";
+import OlympusCombat from "../components/OlympusCombat.jsx";
 import roverSprite from "../components/assets/characters/rover.png";
 
 import { rover_dialogue, user_dialogue } from "../data/dialogue.js";
@@ -28,8 +30,8 @@ const MOVE_LIMITS = { minX: 10, maxX: 90, minY: 50, maxY: 88 };
 const START_POSITION = { x: 37, y: 86 }; // Right up against the crashed ship's nose.
 
 // Ore deposits per map (percent of the screen). Placeholder layout — tweak freely.
-// Follows data/ores.js: ice @ Vastitas, iron/silica @ Alba Mons; Tempe Terra
-// hosts sulfur/basalt until Olympus Mons gets its own map.
+// Follows data/ores.js: ice @ Vastitas, iron/silica @ Alba Mons + Tempe Terra,
+// sulfur/basalt @ Olympus Mons (mobs + Filter required).
 const ORE_NODES = {
   arcadia: [],
   albaMons: [
@@ -38,8 +40,13 @@ const ORE_NODES = {
     { id: "a3", ore: "silica", x: 75, y: 64 },
   ],
   tempeTerra: [
-    { id: "t1", ore: "sulfur", x: 30, y: 78 },
-    { id: "t2", ore: "basalt", x: 66, y: 72 },
+    { id: "t1", ore: "iron", x: 30, y: 78 },
+    { id: "t2", ore: "silica", x: 66, y: 72 },
+  ],
+  olympus: [
+    { id: "o1", ore: "sulfur", x: 24, y: 80 },
+    { id: "o2", ore: "sulfur", x: 48, y: 70 },
+    { id: "o3", ore: "basalt", x: 72, y: 82 },
   ],
   vastitas: [
     { id: "v1", ore: "ice", x: 30, y: 74 },
@@ -57,6 +64,8 @@ const DEFAULT_WALLET = {
   gear: { pickaxe: 1, hasFilter: false, blasters: [] },
   upgrades: {},
 };
+const blasterDamage = (owned = []) =>
+  Math.max(1, ...shop.filter((item) => owned.includes(item.id)).map((item) => item.damage));
 const drillDamage = (tier) =>
   shop.find((item) => item.type === "pickaxe" && item.tier === tier)?.oreDamage ?? 5;
 
@@ -92,6 +101,8 @@ const locations = [
   { id: "albaMons", name: "ALBA MONS", asset: albaMons },
   { id: "tempeTerra", name: "TEMPE TERRA", asset: tempeTerra },
   { id: "vastitas", name: "VASTITAS BOREALIS", asset: vastitasBorealis },
+  // Mobs live here, and the sulfur air means Hugh needs DJ-TMoney's Filter to enter.
+  { id: "olympus", name: "OLYMPUS MONS", asset: olympusMons, needsFilter: true },
 ];
 
 export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) {
@@ -117,6 +128,8 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const [miningNotice, setMiningNotice] = useState(null);
   const [drilling, setDrilling] = useState(false);
   const [drillFrame, setDrillFrame] = useState(0);
+  const [health, setHealth] = useState(100);
+  const [hurtFlash, setHurtFlash] = useState(0);
 
   // Cycle the 3 drill frames while drilling.
   useEffect(() => {
@@ -206,6 +219,28 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         ORE_RESPAWN_MS
       );
     }
+  }
+
+  const healthRef = useRef(100);
+  function hurtHugh(damage) {
+    setHurtFlash(Date.now());
+    healthRef.current = Math.max(0, healthRef.current - damage);
+    if (healthRef.current === 0) {
+      // Blacked out: R.O.V.E.R. drags Hugh back to the crash site.
+      healthRef.current = 100;
+      flashNotice("YOU BLACKED OUT... R.O.V.E.R. HAULED YOU HOME");
+      onSave?.({ location: "arcadia" });
+      resetHughTo(START_POSITION);
+    }
+    setHealth(healthRef.current);
+  }
+
+  const walletRef = useRef(wallet);
+  walletRef.current = wallet;
+  function rewardKill(reward, name) {
+    const w = walletRef.current;
+    updateWallet({ ...w, tintinas: w.tintinas + reward });
+    flashNotice(`${name.toUpperCase()} DOWN! +${reward} T`);
   }
 
   // Latest handlers for the keyboard loop (which is bound once).
@@ -393,8 +428,10 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     }, 3600);
   }
 
+  const travelLocked = travelTarget?.needsFilter && !wallet.gear.hasFilter;
+
   function confirmTravel() {
-    if (!travelTarget) return;
+    if (!travelTarget || travelLocked) return;
     if (onSave) onSave({ location: travelTarget.id });
     resetHughTo(travelTarget.id === "arcadia" ? START_POSITION : { x: 50, y: 80 });
     setTravelTarget(null);
@@ -496,6 +533,19 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         )}
       </div>
 
+      {currentLocation.id === "olympus" && (
+        <OlympusCombat
+          armed={selectedTool === "Blaster"}
+          blasterDamage={blasterDamage(wallet.gear.blasters)}
+          hughPosition={positionRef}
+          hughRef={hughRef}
+          onHurt={hurtHugh}
+          onKill={rewardKill}
+          paused={movementBlocked}
+        />
+      )}
+      {hurtFlash > 0 && <div className="hurt-flash" key={hurtFlash} aria-hidden="true" />}
+
       {miningNotice && (
         <p className="mining-notice" key={miningNotice.id}>{miningNotice.text}</p>
       )}
@@ -523,7 +573,9 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         <p>
           {currentLocation.id === "arcadia"
             ? "CRASH SITE // SECTOR 01"
-            : "TRAVEL ROUTE // SECTOR 02"}
+            : currentLocation.id === "olympus"
+              ? "DANGER // ZEROS DETECTED"
+              : "TRAVEL ROUTE // SECTOR 02"}
         </p>
       </header>
 
@@ -553,6 +605,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
       )}
 
       <HUD
+        health={health}
         currentObjective={
           savedGame.objectiveUnlocked ? savedGame.currentObjective : ""
         }
@@ -657,14 +710,21 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
           <section className="game-panel travel-prompt__panel">
             <p className="game-eyebrow">EDGE OF SECTOR</p>
             <h2 id="travel-prompt-title">TRAVEL TO {travelTarget.name}?</h2>
-            <p>The route ahead will move you away from the crash site.</p>
+            <p>
+              {travelLocked
+                ? "The sulfur air will choke you. Buy a FILTER from DJ-TMoney at the trading post first."
+                : travelTarget.needsFilter
+                  ? "Filter equipped. Zeros roam here: equip the BLASTER [2] and fire with SPACE or click."
+                  : "The route ahead will move you away from the crash site."}
+            </p>
             <div className="travel-prompt__actions">
               <button
                 className="game-button"
+                disabled={travelLocked}
                 onClick={confirmTravel}
                 type="button"
               >
-                TRAVEL
+                {travelLocked ? "NEED FILTER" : "TRAVEL"}
               </button>
               <button
                 className="game-button"
