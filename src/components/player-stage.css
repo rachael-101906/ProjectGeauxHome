@@ -1,0 +1,144 @@
+/* --stage-floor sits above the HUD hotbar and action buttons. */
+.player-stage {
+  --stage-floor: 22%;
+  font-family: "Press Start 2P", cursive;
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 5;
+}
+
+/* Characters walk along --stage-floor. */
+.hugh,
+.stage-spot {
+  bottom: var(--stage-floor);
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.hugh {
+  height: 76px;
+  width: 44px;
+  z-index: 2;
+}
+
+.hugh > * {
+  transform: scaleX(var(--facing, 1));
+}
+
+.hugh--walking > * {
+  animation: hugh-bob 0.32s steps(2) infinite;
+}
+
+@keyframes hugh-bob {
+  50% {
+    translate: 0 -4px;
+  }
+}
+
+.stage-sprite {
+  height: 100%;
+  image-rendering: pixelated;
+  object-fit: contain;
+  width: 100%;
+}
+
+/* Placeholder art: plain blocks until you add your own sprites. */
+.hugh-placeholder {
+  background:
+    linear-gradient(#f2e7c9, #f2e7c9) 50% 4px / 24px 20px no-repeat,
+    linear-gradient(#89f0ff, #89f0ff) 50% 8px / 16px 8px no-repeat,
+    linear-gradient(#e8dcc0, #e8dcc0) 50% 100% / 100% 62px no-repeat;
+  height: 100%;
+  width: 100%;
+}
+
+.stage-spot--rover {
+  height: 44px;
+  width: 52px;
+}
+
+.rover-placeholder {
+  background:
+    linear-gradient(#071018, #071018) 80% 10px / 8px 8px no-repeat,
+    linear-gradient(#ef8f5b, #ef8f5b);
+  border: 3px solid #f2e7c9;
+  height: 100%;
+  width: 100%;
+}
+
+.stage-spot--exit {
+  bottom: calc(var(--stage-floor) + 2%);
+}
+
+.exit-marker {
+  animation: exit-blink 1s steps(2) infinite;
+  color: #89f0ff;
+  font-size: 9px;
+  text-shadow: 0 0 8px rgba(137, 240, 255, 0.7);
+  white-space: nowrap;
+}
+
+@keyframes exit-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.stage-prompt {
+  background: rgba(7, 16, 24, 0.92);
+  border: 2px solid #89f0ff;
+  bottom: calc(var(--stage-floor) + 96px);
+  color: #f2e7c9;
+  font-size: 8px;
+  line-height: 1.6;
+  padding: 8px 10px;
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  z-index: 3;
+}
+
+.stage-prompt:last-of-type {
+  max-width: 90vw;
+}
+
+.stage-dialogue {
+  background: rgba(7, 16, 24, 0.96);
+  border: 3px solid #89f0ff;
+  bottom: calc(var(--stage-floor) + 110px);
+  color: #f2e7c9;
+  font-size: 9px;
+  left: 50%;
+  line-height: 1.9;
+  max-width: min(640px, calc(100vw - 32px));
+  padding: 16px 18px;
+  position: absolute;
+  transform: translateX(-50%);
+  width: 100%;
+  z-index: 12;
+}
+
+.stage-dialogue__hint {
+  color: #80a8b0;
+  font-size: 7px;
+  margin-top: 8px;
+  text-align: right;
+}
+
+.stage-controls {
+  bottom: 8px;
+  color: #80a8b0;
+  font-size: 7px;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hugh--walking > *,
+  .exit-marker {
+    animation: none;
+  }
+}
