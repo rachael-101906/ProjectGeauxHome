@@ -75,4 +75,374 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const nearRoverRef = useRef(false);
   const [nearRover, setNearRover] = useState(false);
 
-  const movementBlocked
+  const movementBlocked =
+    paused || objectivesOpen || roverOpen || Boolean(travelTarget);
+  const blockedRef = useRef(movementBlocked);
+  blockedRef.current = movementBlocked;
+
+  const locationIndex = Math.max(
+    0,
+    locations.findIndex(
+      (location) => location.id === (savedGame.location || "arcadia")
+    )
+  );
+  const currentLocation = locations[locationIndex];
+  const previousLocation =
+    locations[(locationIndex - 1 + locations.length) % locations.length];
+  const nextLocation = locations[(locationIndex + 1) % locations.length];
+
+  useEffect(() => {
+    if (onSave) {
+      onSave({
+        selectedTool,
+        location: savedGame.location || "arcadia",
+        currentObjective: savedGame.currentObjective,
+        objectives: savedGame.objectives,
+      });
+    }
+  }, [
+    onSave,
+    savedGame.currentObjective,
+    savedGame.location,
+    savedGame.objectives,
+    selectedTool,
+  ]);
+
+  // Smooth movement loop
+  useEffect(() => {
+    const held = heldKeys.current;
+
+    function onKeyDown(event) {
+      if (
+        event.key.toLowerCase() === "e" &&
+        !event.repeat &&
+        nearRoverRef.current &&
+        !blockedRef.current
+      ) {
+        event.preventDefault();
+        setRoverOpen(true);
+        return;
+      }
+
+      const direction = MOVE_KEYS[event.key.toLowerCase()];
+      if (!direction || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (blockedRef.current) return;
+      event.preventDefault();
+      held.add(direction);
+    }
+
+    function onKeyUp(event) {
+      const direction = MOVE_KEYS[event.key.toLowerCase()];
+      if (direction) held.delete(direction);
+    }
+
+    const releaseAll = () => held.clear();
+
+    let frame;
+    let last = performance.now();
+
+    function tick(now) {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+
+      if (blockedRef.current) {
+        held.clear();
+      } else if (held.size > 0) {
+        const dx = (held.has("right") ? 1 : 0) - (held.has("left") ? 1 : 0);
+        const dy = (held.has("down") ? 1 : 0) - (held.has("up") ? 1 : 0);
+        const position = positionRef.current;
+        position.x = Math.min(
+          MOVE_LIMITS.maxX,
+          Math.max(MOVE_LIMITS.minX, position.x + dx * MOVE_SPEED_X * dt)
+        );
+        position.y = Math.min(
+          MOVE_LIMITS.maxY,
+          Math.max(MOVE_LIMITS.minY, position.y + dy * MOVE_SPEED_Y * dt)
+        );
+        const element = hughRef.current;
+        if (element) {
+          element.style.left = `${position.x}%`;
+          element.style.top = `${position.y}%`;
+          if (dx !== 0) element.dataset.facing = dx > 0 ? "right" : "left";
+          element.dataset.walking = "true";
+        }
+      } else if (hughRef.current?.dataset.walking) {
+        delete hughRef.current.dataset.walking;
+      }
+
+      // Check proximity to R.O.V.E.R.
+      const { x, y } = positionRef.current;
+      const near =
+        Math.abs(x - ROVER_SPOT.x) <= ROVER_REACH.x &&
+        Math.abs(y - ROVER_SPOT.y) <= ROVER_REACH.y;
+      if (near !== nearRoverRef.current) {
+        nearRoverRef.current = near;
+        setNearRover(near);
+      }
+
+      frame = requestAnimationFrame(tick);
+    }
+
+    frame = requestAnimationFrame(tick);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", releaseAll);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", releaseAll);
+    };
+  }, []);
+
+  function closeRover() {
+    setRoverOpen(false);
+    setRoverLine(ROVER_ASK_NAME);
+  }
+
+  // Options for dialogue window
+  const roverActions =
+    roverLine === ROVER_ASK_NAME
+      ? user_dialogue.map((label, index) => ({
+          label,
+          onClick: index === 0 ? () => setRoverLine(1) : closeRover,
+        }))
+      : roverLine < ROVER_LAST_LINE
+      ? [{ label: "CONTINUE", onClick: () => setRoverLine(roverLine + 1) }]
+      : [{ label: "CLOSE", onClick: closeRover }];
+
+  function finishRoverDialogue() {
+    setRoverSequence(true);
+    window.setTimeout(() => setFadeToBlack(true), 1100);
+  }
+
+  function confirmTravel() {
+    if (!travelTarget) return;
+    if (onSave) onSave({ location: travelTarget.id });
+    setTravelTarget(null);
+  }
+
+  // Handle Pause and Objectives hotkeys
+  useEffect(() => {
+    function handleKeyDown(event) {
+      if (event.key === "Escape" || event.key.toLowerCase() === "p") {
+        event.preventDefault();
+
+        if (objectivesOpen && !paused && event.key === "Escape") {
+          setObjectivesOpen(false);
+          return;
+        }
+
+        setObjectivesOpen(false);
+        setPaused((isPaused) => !isPaused);
+        setPauseNotice("");
+        return;
+      }
+
+      if (paused) {
+        return;
+      }
+
+      if (event.key === "Tab") {
+        event.preventDefault();
+        setObjectivesOpen((isOpen) => !isOpen);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [objectivesOpen, paused]);
+
+  return (
+    <main className="mission-screen">
+      <div
+        aria-hidden="true"
+        className="mission-landscape mission-landscape--image"
+        style={{ backgroundImage: `url("${currentLocation.asset}")` }}
+      >
+        {currentLocation.id === "arcadia" && (
+          <div className="mission-crash-site">
+            <img className="mission-ship" src={spaceship} alt="" />
+            <img className="mission-ship-smoke" src={smoke} alt="" />
+          </div>
+        )}
+        {currentLocation.id === "arcadia" && (
+          <div
+            aria-label="Hugh Mann"
+            className="hugh-mann"
+            ref={hughRef}
+            role="img"
+            style={{ left: `${START_POSITION.x}%`, top: `${START_POSITION.y}%` }}
+          >
+            <span className="hugh-mann__head" />
+            <span className="hugh-mann__body" />
+            <span className="hugh-mann__leg hugh-mann__leg--left" />
+            <span className="hugh-mann__leg hugh-mann__leg--right" />
+          </div>
+        )}
+      </div>
+
+      {currentLocation.id === "arcadia" && (
+        <button
+          aria-label="Talk to R.O.V.E.R."
+          className="rover-npc"
+          onClick={() => !movementBlocked && setRoverOpen(true)}
+          style={{ left: `${ROVER_SPOT.x}%`, top: `${ROVER_SPOT.y}%` }}
+          type="button"
+        >
+          <span className="rover-npc__art">
+            <img alt="" draggable="false" src={roverSprite} />
+          </span>
+          {nearRover && !movementBlocked && (
+            <span className="rover-npc__prompt">[E] TALK</span>
+          )}
+        </button>
+      )}
+
+      <header className="mission-location">
+        <p className="game-eyebrow">PROJECT GEAUX HOME // MISSION 01</p>
+        <h1>{currentLocation.name}</h1>
+        <p>
+          {currentLocation.id === "arcadia"
+            ? "CRASH SITE // SECTOR 01"
+            : "TRAVEL ROUTE // SECTOR 02"}
+        </p>
+      </header>
+
+      <button
+        aria-label={`Travel toward ${previousLocation.name}`}
+        className="edge-travel edge-travel--left"
+        onClick={() => setTravelTarget(previousLocation)}
+        type="button"
+      >
+        <span aria-hidden="true">‹</span>
+        <small>{previousLocation.name}</small>
+      </button>
+      <button
+        aria-label={`Travel toward ${nextLocation.name}`}
+        className="edge-travel edge-travel--right"
+        onClick={() => setTravelTarget(nextLocation)}
+        type="button"
+      >
+        <small>{nextLocation.name}</small>
+        <span aria-hidden="true">›</span>
+      </button>
+
+      {saveError && (
+        <p aria-live="assertive" className="mission-save-error" role="alert">
+          SAVE ERROR: {saveError}
+        </p>
+      )}
+
+      <HUD
+        currentObjective={
+          savedGame.objectiveUnlocked ? savedGame.currentObjective : ""
+        }
+        onSelectTool={setSelectedTool}
+        selectedTool={selectedTool}
+      />
+
+      {currentLocation.id === "arcadia" && (
+        <aside className={`rover-tab${roverOpen ? " rover-tab--open" : ""}`}>
+          <button
+            aria-expanded={roverOpen}
+            className="rover-tab__button"
+            onClick={() => (roverOpen ? closeRover() : setRoverOpen(true))}
+            type="button"
+          >
+            <img src={roverSprite} alt="Talk to Rover" />
+          </button>
+          {roverOpen && (
+            <RoverDialogue
+              actions={roverActions}
+              key={roverLine}
+              message={rover_dialogue[roverLine]}
+            />
+          )}
+        </aside>
+      )}
+
+      {roverSequence && (
+        <div className="rover-escort" aria-hidden="true">
+          <img className="rover-escort__rover" src={roverSprite} alt="" />
+        </div>
+      )}
+      <div className={`black-fade${fadeToBlack ? " black-fade--active" : ""}`} />
+
+      <div className="mission-actions">
+        <button
+          className="game-button"
+          onClick={() => !paused && setObjectivesOpen(true)}
+          type="button"
+        >
+          OBJECTIVES [TAB]
+        </button>
+        <button
+          className="game-button"
+          onClick={() => {
+            setObjectivesOpen(false);
+            setPaused(true);
+          }}
+          type="button"
+        >
+          PAUSE [ESC]
+        </button>
+      </div>
+
+      <ObjectivesMenu
+        isOpen={objectivesOpen && !paused}
+        objectives={savedGame.objectives || missionObjectives}
+        onClose={() => setObjectivesOpen(false)}
+      />
+
+      {paused && (
+        <PauseMenu
+          onControls={() =>
+            setPauseNotice("TAB: OBJECTIVES  //  ESC OR P: RESUME")
+          }
+          onMainMenu={onMainMenu}
+          onQuit={() =>
+            setPauseNotice("CLOSE THIS BROWSER TAB TO QUIT THE GAME.")
+          }
+          onResume={() => {
+            setPaused(false);
+            setPauseNotice("");
+          }}
+          onSettings={() => setPauseNotice("NO CONFIGURABLE SETTINGS YET.")}
+          notice={pauseNotice}
+        />
+      )}
+
+      {travelTarget && (
+        <div
+          className="travel-prompt"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="travel-prompt-title"
+        >
+          <section className="game-panel travel-prompt__panel">
+            <p className="game-eyebrow">EDGE OF SECTOR</p>
+            <h2 id="travel-prompt-title">TRAVEL TO {travelTarget.name}?</h2>
+            <p>The route ahead will move you away from the crash site.</p>
+            <div className="travel-prompt__actions">
+              <button
+                className="game-button"
+                onClick={confirmTravel}
+                type="button"
+              >
+                TRAVEL
+              </button>
+              <button
+                className="game-button"
+                onClick={() => setTravelTarget(null)}
+                type="button"
+              >
+                STAY HERE
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+    </main>
+  );
+}
