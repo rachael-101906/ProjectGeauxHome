@@ -156,6 +156,13 @@
   line-height: 1.8;
 }
 
+.intro-story__objectives > p {
+  color: var(--game-cream);
+  font-size: 11px;
+  line-height: 1.8;
+  margin-top: 18px;
+}
+
 .intro-story__objectives li::before {
   color: var(--game-cyan);
   content: "> ";
@@ -352,49 +359,70 @@ progress::-moz-progress-bar {
   margin-top: 10px;
 }
 
-.hud-hotbar {
-  bottom: 24px;
+.current-objective__header {
+  align-items: center;
   display: flex;
-  gap: 8px;
-  left: 50%;
-  padding: 10px;
-  transform: translateX(-50%);
+  justify-content: space-between;
 }
 
-.hud-tool {
-  align-items: center;
-  background: rgba(7, 16, 24, 0.96);
-  border: 2px solid rgba(137, 240, 255, 0.55);
+.current-objective progress {
+  margin-top: 12px;
+}
+
+.current-objective--expanded {
+  position: relative;
+  right: auto;
+  top: auto;
+  width: min(560px, calc(100vw - 32px));
+}
+
+.travel-menu,
+.rover-dialogue {
+  max-width: 620px;
+  padding: clamp(20px, 4vw, 36px);
+  width: 100%;
+}
+
+.travel-menu .game-title,
+.rover-dialogue .game-title {
+  margin-top: 10px;
+}
+
+.travel-menu__message,
+.rover-dialogue__lines {
   color: var(--game-cream);
-  cursor: pointer;
-  display: flex;
-  font: inherit;
-  font-size: 8px;
+  font-size: 10px;
+  line-height: 2;
+  margin-top: 22px;
+}
+
+.travel-menu__destinations {
+  display: grid;
   gap: 10px;
-  min-height: 58px;
-  padding: 8px 12px;
-  white-space: nowrap;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 22px;
 }
 
-.hud-tool:hover,
-.hud-tool.is-selected {
-  border-color: var(--game-cyan);
-  box-shadow: 0 0 12px rgba(137, 240, 255, 0.32);
+.travel-menu__destinations .game-button {
+  font-size: 8px;
 }
 
-.hud-tool__key {
-  align-items: center;
-  border: 1px solid var(--game-cyan);
-  color: var(--game-cyan);
-  display: inline-flex;
-  height: 28px;
-  justify-content: center;
-  width: 28px;
+.travel-menu__destinations .game-button:disabled {
+  border-color: rgba(137, 240, 255, 0.3);
+  color: var(--game-muted);
+  cursor: default;
 }
 
-.hud-tool:focus-visible {
-  outline: 2px solid var(--game-cream);
-  outline-offset: 3px;
+.rover-dialogue__lines {
+  display: grid;
+  gap: 12px;
+}
+
+.rover-dialogue__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
 }
 
 .pause-menu {
@@ -541,17 +569,22 @@ progress::-moz-progress-bar {
   position: absolute;
   text-align: center;
   text-shadow: 0 2px 6px #071018;
-  top: 18%;
+  top: 24px;
   transform: translateX(-50%);
-  width: calc(100% - 48px);
+  width: min(240px, calc(100% - 32px));
   z-index: 1;
+}
+
+.mission-location .game-eyebrow,
+.mission-location > p:last-child {
+  font-size: 6px;
 }
 
 .mission-location h1 {
   color: var(--game-cyan);
-  font-size: clamp(16px, 3vw, 28px);
-  line-height: 1.8;
-  margin-top: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 5px;
 }
 
 .mission-location > p:last-child {
@@ -578,11 +611,12 @@ progress::-moz-progress-bar {
 }
 
 .mission-actions {
-  bottom: 106px;
+  bottom: auto;
   display: flex;
   gap: 12px;
   left: 50%;
   position: absolute;
+  top: 70%;
   transform: translateX(-50%);
   z-index: 11;
 }
@@ -658,28 +692,23 @@ progress::-moz-progress-bar {
     font-size: 8px;
   }
 
-  .hud-hotbar {
-    bottom: 12px;
-    gap: 4px;
-    max-width: calc(100vw - 24px);
-    padding: 6px;
-    width: max-content;
-  }
-
-  .hud-tool {
-    flex-direction: column;
-    font-size: 7px;
-    gap: 4px;
-    min-height: 58px;
-    padding: 6px;
-  }
-
   .mission-actions {
-    bottom: 98px;
+    flex-wrap: wrap;
+    justify-content: center;
+    top: 64%;
+    width: calc(100% - 20px);
   }
 
   .mission-actions .game-button {
     font-size: 7px;
     padding: 6px;
+  }
+
+  .travel-menu__destinations {
+    grid-template-columns: 1fr;
+  }
+
+  .rover-dialogue__actions {
+    flex-wrap: wrap;
   }
 }

@@ -1,11 +1,5 @@
 const storageKey = "project-geaux-home:saves";
 const slotCount = 3;
-const defaultObjectives = [
-  "Communication Array",
-  "Life Support Core",
-  "Power System",
-  "Propulsion Engine",
-];
 
 export function readSaveSlots() {
   const storedSaves = window.localStorage.getItem(storageKey);
@@ -57,6 +51,17 @@ export function readSaveSlots() {
     return {
       ...save,
       currentLocation: save.currentLocation || "Arcadia Planitia",
+      objectiveStage: Number.isInteger(save.objectiveStage)
+        ? save.objectiveStage
+        : 0,
+      iceCollected: Number.isFinite(save.iceCollected)
+        ? Math.max(0, save.iceCollected)
+        : 0,
+      habitatPowered: Boolean(save.habitatPowered),
+      travelUnlocked: Boolean(save.travelUnlocked),
+      currentObjective: save.objectiveStage === undefined
+        ? "Find R.O.V.E.R."
+        : save.currentObjective,
     };
   });
 }
@@ -83,9 +88,13 @@ export function createSaveSlot(slot) {
     updatedAt: timestamp,
     status: "briefing",
     currentLocation: "Arcadia Planitia",
-    selectedTool: "Drill",
-    currentObjective: "Restore Communications",
-    objectives: defaultObjectives.map((name) => ({ name, progress: 0 })),
+    selectedTool: "Pickaxe",
+    currentObjective: "Find R.O.V.E.R.",
+    objectiveStage: 0,
+    iceCollected: 0,
+    habitatPowered: false,
+    travelUnlocked: false,
+    objectives: [],
   };
 
   return writeSaveSlots(saves);

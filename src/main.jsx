@@ -5,7 +5,6 @@ import ReactDOM from "react-dom/client";
 import MainMenu from "./screens/MainMenu.jsx";
 import SaveSelect from "./screens/SaveSelect.jsx";
 import Base from "./screens/Base.jsx";
-import LocationSelect from "./screens/LocationSelect.jsx";
 import IntroStory from "./components/IntroStory.jsx";
 import PixelTransition from "./components/PixelTransition.jsx";
 import { createSaveSlot, readSaveSlots, updateSaveSlot } from "./state/save.js";
@@ -113,33 +112,12 @@ function App() {
         }}
       />
     );
-  } else if (screen === "location-select") {
-    const save = saveState.slots[activeSlot];
-    activeScreen = save ? (
-      <LocationSelect
-        currentLocation={save.currentLocation}
-        onBack={() => navigateTo("base")}
-        onSelect={(location) => {
-          saveMission({ currentLocation: location.name });
-          navigateTo("base");
-        }}
-      />
-    ) : (
-      <SaveSelect
-        onBack={() => navigateTo("main-menu")}
-        onContinue={continueMission}
-        onNewMission={startNewMission}
-        saveError="The selected mission save is unavailable."
-        saveSlots={saveState.slots}
-      />
-    );
   } else if (screen === "base") {
     const save = saveState.slots[activeSlot];
     activeScreen = save ? (
       <Base
         onMainMenu={() => navigateTo("main-menu")}
         onSave={saveMission}
-        onTravel={() => navigateTo("location-select")}
         saveError={saveState.error}
         savedGame={save}
       />
