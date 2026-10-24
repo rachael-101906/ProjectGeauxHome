@@ -1164,3 +1164,53 @@ progress::-moz-progress-bar {
   .rover-dialogue__text { font-size: 7px; line-height: 1.8; }
   .rover-dialogue__actions { flex-direction: column; }
 }
+
+
+/* Wide character dialogue strip with portrait and speaker label */
+.rover-tab { bottom:14px; left:14px; right:14px; max-width:none; width:auto; z-index:45; }
+.rover-tab__button { align-self:flex-end; }
+.rover-tab--open .rover-tab__button { display:none; }
+.rover-tab .rover-dialogue { width:100%; min-height:148px; gap:clamp(12px,2vw,24px); padding:clamp(10px,1.5vw,18px); background:rgba(5,14,22,.97); box-shadow:0 0 0 3px rgba(7,16,24,.85),0 0 22px rgba(137,240,255,.18); }
+.rover-dialogue__portrait { flex:0 0 clamp(84px,10vw,132px); height:clamp(90px,11vw,136px); }
+.rover-dialogue__content { flex:1; min-width:0; align-self:center; }
+.rover-dialogue__speaker { color:var(--game-cyan); font-size:clamp(8px,1vw,11px); letter-spacing:.12em; margin-bottom:12px; }
+.rover-dialogue__text { font-size:clamp(8px,.9vw,11px); line-height:2; max-width:100ch; }
+.rover-dialogue__actions { display:flex; flex-direction:row; flex-wrap:wrap; gap:8px; margin-top:14px; }
+.rover-dialogue__choice { min-height:34px; font-size:8px; }
+.location-title-splash { animation:title-splash-fade 600ms ease 1s forwards; pointer-events:none; }
+@keyframes title-splash-fade { to { opacity:0; transform:translate(-50%,-12px); } }
+.mine-node { align-items:center; background:rgba(7,16,24,.9); border:2px solid var(--game-cyan); color:var(--game-cream); display:flex; flex-direction:column; gap:5px; padding:8px 10px; position:absolute; transform:translate(-50%,-50%); z-index:7; cursor:pointer; }
+.mine-node__rock { color:#a9d9de; font-size:26px; }
+.mine-node__label { font-size:7px; white-space:nowrap; }
+.mining-notice,.ore-counter { background:rgba(7,16,24,.92); border:1px solid var(--game-cyan); color:var(--game-cream); font-size:8px; padding:9px 12px; position:absolute; z-index:12; }
+.mining-notice { bottom:130px; left:16px; }
+.ore-counter { bottom:90px; left:16px; }
+.rover-ride-cutscene { inset:0; overflow:hidden; pointer-events:none; position:absolute; z-index:80; }
+.rover-ride-cutscene__rover { animation:rover-drive-away 2.2s ease-in forwards; bottom:23%; left:42%; position:absolute; width:clamp(130px,20vw,260px); }
+.rover-ride-cutscene__rover img { display:block; image-rendering:pixelated; width:100%; }
+.rover-ride-cutscene__hugh { animation:hugh-hop-aboard .65s ease-out forwards,rover-drive-away 2.2s ease-in forwards; bottom:34%; left:53%; position:absolute; width:36px; height:58px; }
+.rover-ride-cutscene__hugh .hugh-mann__head { top:0; }
+.rover-ride-cutscene__hugh .hugh-mann__body { top:22px; }
+.rover-ride-cutscene__hugh .hugh-mann__leg { top:42px; }
+@keyframes hugh-hop-aboard { 0% { transform:translateY(28px); } 55% { transform:translateY(-22px); } 100% { transform:translateY(0); } }
+@keyframes rover-drive-away { 0% { transform:translate(0,0) scale(1); } 60% { transform:translate(30vw,-5vh) scale(1.06); } 100% { transform:translate(120vw,-12vh) scale(.7); } }
+.travel-menu-overlay { align-items:center; background:rgba(2,8,13,.88); display:flex; inset:0; justify-content:center; padding:16px; position:fixed; z-index:60; }
+.travel-menu-panel { display:flex; flex-direction:column; gap:16px; max-width:560px; padding:28px; text-align:center; width:min(100%,560px); }
+.travel-menu-panel h2 { color:var(--game-cyan); font-size:14px; line-height:1.8; }
+.travel-menu-panel p { font-size:9px; line-height:1.9; }
+.travel-destinations { display:grid; gap:10px; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); }
+.trader-screen { align-items:center; background:linear-gradient(rgba(3,10,17,.86),rgba(3,10,17,.94)),url('/src/components/assets/backgrounds/vastitas-borealis.png') center/cover; display:flex; inset:0; justify-content:center; overflow:auto; padding:clamp(12px,3vw,32px); position:fixed; z-index:70; }
+.trader-screen__panel { max-height:calc(100vh - 24px); max-width:1000px; overflow:auto; padding:clamp(16px,3vw,30px); width:100%; }
+.trader-screen__header { align-items:flex-start; border-bottom:1px solid rgba(137,240,255,.35); display:flex; gap:16px; justify-content:space-between; padding-bottom:16px; }
+.trader-screen__title { color:var(--game-cyan); font-size:clamp(16px,2.6vw,24px); line-height:1.7; margin-top:10px; }
+.trader-screen__wallet { color:var(--game-cream); font-size:10px; line-height:2; margin:16px 0; }
+.trader-screen__traders { display:grid; gap:14px; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.trader-card { background:rgba(7,16,24,.82); border:1px solid rgba(137,240,255,.38); padding:14px; }
+.trader-card__portrait { align-items:center; background:#142b35; border:2px solid var(--game-cyan); display:flex; font-size:30px; height:70px; justify-content:center; margin-bottom:12px; width:70px; }
+.trader-card h3 { color:var(--game-cyan); font-size:10px; line-height:1.8; margin-bottom:8px; }
+.trader-card p { color:var(--game-muted); font-size:8px; line-height:1.9; min-height:46px; }
+.trader-card__stock { border-top:1px solid rgba(137,240,255,.2); display:flex; flex-direction:column; gap:8px; margin-top:12px; padding-top:12px; }
+.trader-card__item { align-items:flex-start; display:flex; flex-direction:column; font-size:8px; gap:8px; line-height:1.8; }
+.trader-card__item button { width:100%; }
+.trader-screen__footer { display:flex; flex-wrap:wrap; gap:10px; justify-content:flex-end; margin-top:20px; }
+@media(max-width:700px) { .trader-screen__traders { grid-template-columns:1fr; } .trader-card { display:grid; grid-template-columns:80px 1fr; gap:0 12px; } .trader-card__portrait { grid-row:span 2; } .trader-card__stock { grid-column:1/-1; } .rover-tab { bottom:8px; left:8px; right:8px; } .rover-tab .rover-dialogue { min-height:116px; padding:8px; gap:10px; } .rover-dialogue__portrait { flex-basis:72px; height:84px; } .rover-dialogue__text { font-size:7px; line-height:1.8; } .rover-dialogue__actions { flex-direction:column; } }
