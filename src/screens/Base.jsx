@@ -14,6 +14,7 @@ import ObjectivesMenu from "../components/ObjectivesMenu.jsx";
 import RoverDialogue from "../components/RoverDialogue.jsx";
 import TravelMenu from "../components/TravelMenu.jsx";
 import PauseMenu from "../components/PauseMenu.jsx";
+import PlayerStage from "../components/PlayerStage.jsx";
 
 const roverIntroduction = [
   "Good news! We are only mostly stranded.",
@@ -154,6 +155,8 @@ export default function Base({
         paused={worldPaused}
         selectedTool={selectedTool}
       />
+
+      <PlayerStage active={!paused && !objectivesOpen} onTravel={onTravel} />
 
       <header className="mission-location">
         <p className="game-eyebrow">PROJECT GEAUX HOME // MISSION 01</p>
