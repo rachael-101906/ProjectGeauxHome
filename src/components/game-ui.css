@@ -1164,3 +1164,232 @@ progress::-moz-progress-bar {
   .rover-dialogue__text { font-size: 7px; line-height: 1.8; }
   .rover-dialogue__actions { flex-direction: column; }
 }
+
+/* ===== Smoke centred over the ship ===== */
+.mission-ship-smoke {
+  --smoke-size: clamp(40px, 5vw, 72px);
+  bottom: 74%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* ===== Hugh sprite + drill in hand ===== */
+.hugh-mann {
+  height: 72px;
+  transition: none;
+  width: 72px;
+}
+.hugh-mann__sprite {
+  background: var(--hugh-right) center / contain no-repeat;
+  display: block;
+  height: 100%;
+  image-rendering: pixelated;
+  width: 100%;
+}
+.hugh-mann[data-facing="left"] .hugh-mann__sprite { background-image: var(--hugh-left); }
+.hugh-mann[data-walking] .hugh-mann__sprite { animation: hugh-bob 320ms steps(2, end) infinite; }
+@keyframes hugh-bob { 50% { transform: translateY(-3px); } }
+
+/* Pixel drill: grey body, orange grip, pointed bit. Mirrors when facing left. */
+.hugh-drill {
+  height: 12px;
+  left: 62%;
+  position: absolute;
+  top: 54%;
+  width: 26px;
+}
+.hugh-drill::before { /* body + grip */
+  background: linear-gradient(90deg, #f29a38 0 30%, #9aa3a8 30% 100%);
+  border: 2px solid #22262b;
+  content: "";
+  height: 10px;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 16px;
+}
+.hugh-drill::after { /* bit */
+  background: #d7dde0;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  content: "";
+  height: 10px;
+  left: 18px;
+  position: absolute;
+  top: 2px;
+  width: 10px;
+}
+.hugh-mann[data-facing="left"] .hugh-drill { left: auto; right: 62%; transform: scaleX(-1); }
+.hugh-mann--drilling .hugh-drill { animation: drill-buzz 60ms steps(2) infinite; }
+.hugh-mann[data-facing="left"].hugh-mann--drilling .hugh-drill { animation-name: drill-buzz-left; }
+@keyframes drill-buzz { 50% { translate: 2px 1px; } }
+@keyframes drill-buzz-left { 50% { translate: -2px 1px; } }
+
+/* Hop onto R.O.V.E.R. */
+.hugh-mann--jumping {
+  transition: left 700ms linear, top 700ms cubic-bezier(.2, -1.4, .6, 1);
+  z-index: 6;
+}
+.hugh-mann--hidden { visibility: hidden; }
+
+.rover-ride {
+  animation: rover-drive-off 1.8s ease-in forwards;
+  pointer-events: none;
+  position: absolute;
+  transform: translate(-50%, -100%);
+  width: clamp(84px, 9vw, 128px);
+  z-index: 6;
+}
+.rover-ride__hugh {
+  animation: hugh-bob 260ms steps(2, end) infinite;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  bottom: 58%;
+  height: 52px;
+  left: 18%;
+  position: absolute;
+  width: 52px;
+}
+@keyframes rover-drive-off {
+  0% { translate: 0 0; }
+  10% { translate: -6px 2px; }
+  100% { translate: 70vw 0; }
+}
+
+/* ===== Ore nodes ===== */
+.ore-node {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  position: absolute;
+  transform: translate(-50%, -100%);
+  width: clamp(40px, 4vw, 60px);
+  z-index: 3;
+}
+.ore-node img { display: block; image-rendering: pixelated; width: 100%; }
+.ore-node--empty img { filter: grayscale(1) brightness(.5); opacity: .5; }
+.ore-node__bar {
+  background: #071018;
+  border: 1px solid var(--game-cyan);
+  display: block;
+  height: 5px;
+  margin-top: 3px;
+}
+.ore-node__bar span { background: #f29a38; display: block; height: 100%; }
+.mining-notice {
+  animation: mining-pop 1.4s ease-out forwards;
+  color: var(--game-cream);
+  font-size: 10px;
+  left: 50%;
+  pointer-events: none;
+  position: absolute;
+  text-shadow: 0 2px 0 #071018;
+  top: 38%;
+  transform: translateX(-50%);
+  z-index: 20;
+}
+@keyframes mining-pop {
+  from { opacity: 1; translate: 0 0; }
+  to { opacity: 0; translate: 0 -30px; }
+}
+
+/* ===== Dialogue portraits cropped from sprites ===== */
+.rover-dialogue__portrait { align-items: center; display: flex; justify-content: center; }
+.portrait-crop {
+  background-repeat: no-repeat;
+  display: block;
+  image-rendering: pixelated;
+  max-height: 100%;
+  width: 100%;
+}
+/* Hugh.png 32x32: upper body = x4..26, y1..21 */
+.portrait-crop--hugh {
+  aspect-ratio: 22 / 20;
+  background-position: 40% 8.3%;
+  background-size: 145.45% auto;
+}
+/* rover.png 1920x1080: camera head = x995..1230, y335..460 */
+.portrait-crop--rover {
+  aspect-ratio: 235 / 125;
+  background-position: 59.05% 35.08%;
+  background-size: 817% auto;
+}
+
+/* ===== Trading post (placeholder traders) ===== */
+.trading-post {
+  align-items: center;
+  background: rgba(3, 8, 12, 0.88);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 16px;
+  position: fixed;
+  z-index: 35;
+}
+.trading-post__panel {
+  color: var(--game-cream);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 100%;
+  max-width: 900px;
+  overflow: auto;
+  padding: 20px;
+  width: 100%;
+}
+.trading-post__header { align-items: flex-start; display: flex; gap: 16px; justify-content: space-between; }
+.trading-post__header h2 { font-size: clamp(14px, 2vw, 22px); margin: 6px 0 0; }
+.trading-post__wallet { font-size: 10px; text-align: right; }
+.trading-post__wallet strong { color: #f2c14e; font-size: 14px; }
+.trading-post__ores { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+.trading-post__ores span, .trading-post__item { align-items: center; display: flex; gap: 6px; }
+.trading-post__ores img { image-rendering: pixelated; width: 20px; }
+.trading-post__tabs { display: grid; gap: 8px; grid-template-columns: repeat(3, 1fr); }
+.trading-post__tab {
+  align-items: center;
+  background: rgba(7, 16, 24, .8);
+  border: 2px solid rgba(137, 240, 255, .35);
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 9px;
+  gap: 10px;
+  padding: 10px;
+  text-align: left;
+}
+.trading-post__tab small { color: var(--game-muted); display: block; font-size: 7px; margin-top: 4px; }
+.trading-post__tab.is-selected { border-color: var(--game-cyan); box-shadow: 0 0 12px rgba(137, 240, 255, .3); }
+.trading-post__portrait {
+  background: #101f2b;
+  border: 1px solid var(--game-cyan);
+  display: grid;
+  font-size: 28px;
+  height: 48px;
+  place-items: center;
+  width: 48px;
+}
+.trading-post__greeting { color: var(--game-muted); font-size: 9px; line-height: 1.8; margin: 0; }
+.trading-post__list { display: flex; flex-direction: column; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.trading-post__list li {
+  align-items: center;
+  background: rgba(0, 0, 0, .3);
+  display: flex;
+  font-size: 9px;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 8px 10px;
+}
+.trading-post__item { flex-wrap: wrap; }
+.trading-post__item img { image-rendering: pixelated; width: 24px; }
+.trading-post__item small, .trading-post__buttons small { color: var(--game-muted); font-size: 7px; width: 100%; }
+.trading-post__buttons { align-items: center; display: flex; gap: 8px; }
+.trading-post__buttons small { width: auto; }
+.trading-post__list .game-button { font-size: 8px; min-height: 32px; padding: 6px 10px; }
+.trading-post__footer { align-items: center; display: flex; justify-content: space-between; }
+.trading-post__footer p { color: #f2c14e; font-size: 9px; margin: 0; }
+@media (max-width: 640px) {
+  .trading-post__tabs { grid-template-columns: 1fr; }
+  .trading-post__list li { align-items: flex-start; flex-direction: column; }
+}

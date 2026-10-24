@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import roverPortrait from './assets/backgrounds/rover.png'
+import roverPortrait from './assets/characters/rover.png'
+import hughPortrait from './assets/characters/Hugh.png'
 
 // Typewriter dialogue box. Optional `actions` ([{ label, onClick }]) are shown
 // as buttons once the line has finished typing. Keyboard: 1-9 pick an action,
@@ -57,15 +58,11 @@ export default function RoverDialogue({ message: messageOverride, actions = [], 
   return (
     <div className={`rover-dialogue rover-dialogue--${speaker === "HUGH MANN" ? "hugh" : "rover"}`}>
       <div className="rover-dialogue__portrait" aria-hidden="true">
-        {speaker === "HUGH MANN" ? (
-          <div className="hugh-portrait">
-            <span className="hugh-portrait__head" />
-            <span className="hugh-portrait__neck" />
-            <span className="hugh-portrait__shoulders" />
-          </div>
-        ) : (
-          <img className="rover-dialogue__rover-image" src={roverPortrait} alt="" draggable="false" />
-        )}
+        {/* Cropped from the sprite sheets: Hugh's upper body / R.O.V.E.R.'s camera head. */}
+        <span
+          className={`portrait-crop portrait-crop--${speaker === "HUGH MANN" ? "hugh" : "rover"}`}
+          style={{ backgroundImage: `url("${speaker === "HUGH MANN" ? hughPortrait : roverPortrait}")` }}
+        />
       </div>
       <div className="rover-dialogue__content">
         <div className="rover-dialogue__speaker">{speaker}</div>
