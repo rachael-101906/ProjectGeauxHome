@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import HUD from "../components/HUD.jsx";
 import ObjectivesMenu from "../components/ObjectivesMenu.jsx";
 import PauseMenu from "../components/PauseMenu.jsx";
@@ -9,7 +9,33 @@ import albaMons from "../components/assets/backgrounds/alba-mons.png";
 import tempeTerra from "../components/assets/backgrounds/tempe-terra.png";
 import vastitasBorealis from "../components/assets/backgrounds/vastitas-borealis.png";
 import RoverDialogue from "../components/RoverDialogue.jsx";
-import { rover_dialogue } from "../data/dialogue.js";
+import { rover_dialogue, user_dialogue } from "../data/dialogue.js";
+
+// Movement tuning: percent of the screen crossed per second.
+const MOVE_SPEED_X = 30;
+const MOVE_SPEED_Y = 34;
+const MOVE_LIMITS = { minX: 6, maxX: 94, minY: 50, maxY: 88 };
+const START_POSITION = { x: 50, y: 72 };
+
+// Held-key lookup, lowercase so Caps Lock / Shift don't break movement.
+const MOVE_KEYS = {
+  arrowleft: "left",
+  a: "left",
+  arrowright: "right",
+  d: "right",
+  arrowup: "up",
+  w: "up",
+  arrowdown: "down",
+  s: "down",
+};
+
+// R.O.V.E.R. conversation. rover_dialogue and user_dialogue come from
+// data/dialogue.js, so editing the text there updates the game:
+//   rover_dialogue[0]  R.O.V.E.R. asks the name -> player picks a reply
+//   user_dialogue[0]   "Hugh Mann."  -> continues with rover_dialogue[1], [2]
+//   user_dialogue[1]   "Goodbye."    -> closes the conversation
+const ROVER_ASK_NAME = 0;
+const ROVER_LAST_LINE = rover_dialogue.length - 1;
 
 const missionObjectives = [
   { name: "Communication Array", progress: 0 },
@@ -34,7 +60,15 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
   );
   const [travelTarget, setTravelTarget] = useState(null);
   const [roverOpen, setRoverOpen] = useState(false);
-  const [playerPosition, setPlayerPosition] = useState({ x: 50, y: 72 });
+  const [roverLine, setRoverLine] = useState(ROVER_ASK_NAME);
+  // Hugh's position lives in a ref and is written straight to the element each
+  // frame, so walking doesn't re-render the whole screen.
+  const hughRef = useRef(null);
+  const positionRef = useRef({ ...START_POSITION });
+  const heldKeys = useRef(new Set());
+  const movementBlocked = paused || objectivesOpen || roverOpen || Boolean(travelTarget);
+  const blockedRef = useRef(movementBlocked);
+  blockedRef.current = movementBlocked;
   const locationIndex = Math.max(
     0,
     locations.findIndex((location) => location.id === (savedGame.location || "arcadia")),
@@ -58,30 +92,88 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
     selectedTool,
   ]);
 
+  // Smooth movement: track which keys are held and move every frame, instead of
+  // relying on the OS key-repeat (which stalls at first and can't combine keys).
   useEffect(() => {
-    function handleMovement(event) {
-      const directions = {
-        ArrowLeft: [-2, 0],
-        a: [-2, 0],
-        ArrowRight: [2, 0],
-        d: [2, 0],
-        ArrowUp: [0, -2],
-        w: [0, -2],
-        ArrowDown: [0, 2],
-        s: [0, 2],
-      };
-      const direction = directions[event.key];
-      if (!direction || paused || travelTarget) return;
+    const held = heldKeys.current;
+
+    function onKeyDown(event) {
+      const direction = MOVE_KEYS[event.key.toLowerCase()];
+      if (!direction || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (blockedRef.current) return;
       event.preventDefault();
-      setPlayerPosition((position) => ({
-        x: Math.min(94, Math.max(6, position.x + direction[0])),
-        y: Math.min(88, Math.max(50, position.y + direction[1])),
-      }));
+      held.add(direction);
     }
 
-    window.addEventListener("keydown", handleMovement);
-    return () => window.removeEventListener("keydown", handleMovement);
-  }, [paused, travelTarget]);
+    function onKeyUp(event) {
+      const direction = MOVE_KEYS[event.key.toLowerCase()];
+      if (direction) held.delete(direction);
+    }
+
+    const releaseAll = () => held.clear();
+
+    let frame;
+    let last = performance.now();
+
+    function tick(now) {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+
+      if (blockedRef.current) {
+        held.clear();
+      } else if (held.size > 0) {
+        const dx = (held.has("right") ? 1 : 0) - (held.has("left") ? 1 : 0);
+        const dy = (held.has("down") ? 1 : 0) - (held.has("up") ? 1 : 0);
+        const position = positionRef.current;
+        position.x = Math.min(
+          MOVE_LIMITS.maxX,
+          Math.max(MOVE_LIMITS.minX, position.x + dx * MOVE_SPEED_X * dt),
+        );
+        position.y = Math.min(
+          MOVE_LIMITS.maxY,
+          Math.max(MOVE_LIMITS.minY, position.y + dy * MOVE_SPEED_Y * dt),
+        );
+        const element = hughRef.current;
+        if (element) {
+          element.style.left = `${position.x}%`;
+          element.style.top = `${position.y}%`;
+          if (dx !== 0) element.dataset.facing = dx > 0 ? "right" : "left";
+          element.dataset.walking = "true";
+        }
+      } else if (hughRef.current?.dataset.walking) {
+        delete hughRef.current.dataset.walking;
+      }
+
+      frame = requestAnimationFrame(tick);
+    }
+
+    frame = requestAnimationFrame(tick);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", releaseAll);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", releaseAll);
+    };
+  }, []);
+
+  function closeRover() {
+    setRoverOpen(false);
+    setRoverLine(ROVER_ASK_NAME);
+  }
+
+  // What the player can press for the current R.O.V.E.R. line.
+  const roverActions =
+    roverLine === ROVER_ASK_NAME
+      ? user_dialogue.map((label, index) => ({
+          label,
+          onClick: index === 0 ? () => setRoverLine(1) : closeRover,
+        }))
+      : roverLine < ROVER_LAST_LINE
+        ? [{ label: "CONTINUE", onClick: () => setRoverLine(roverLine + 1) }]
+        : [{ label: "CLOSE", onClick: closeRover }];
 
   function confirmTravel() {
     if (!travelTarget) return;
@@ -136,8 +228,9 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
           <div
             aria-label="Hugh Mann"
             className="hugh-mann"
+            ref={hughRef}
             role="img"
-            style={{ left: `${playerPosition.x}%`, top: `${playerPosition.y}%` }}
+            style={{ left: `${START_POSITION.x}%`, top: `${START_POSITION.y}%` }}
           >
             <span className="hugh-mann__head" />
             <span className="hugh-mann__body" />
@@ -189,12 +282,18 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame }) {
           <button
             aria-expanded={roverOpen}
             className="rover-tab__button"
-            onClick={() => setRoverOpen((isOpen) => !isOpen)}
+            onClick={() => (roverOpen ? closeRover() : setRoverOpen(true))}
             type="button"
           >
             R.O.V.E.R.
           </button>
-          {roverOpen && <RoverDialogue message={rover_dialogue[0]} />}
+          {roverOpen && (
+            <RoverDialogue
+              actions={roverActions}
+              key={roverLine}
+              message={rover_dialogue[roverLine]}
+            />
+          )}
         </aside>
       )}
 

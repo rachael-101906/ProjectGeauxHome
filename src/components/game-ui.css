@@ -491,17 +491,22 @@ progress::-moz-progress-bar {
 }
 
 .mission-ship-smoke {
-  bottom: 61%;
-  left: 12%;
+  /* Tweak these three to move or resize the smoke coming off the ship. */
+  --smoke-left: 15%;
+  --smoke-bottom: 54%;
+  --smoke-size: clamp(34px, 5vw, 72px);
+
+  bottom: var(--smoke-bottom);
+  left: var(--smoke-left);
   mix-blend-mode: screen;
   position: absolute;
-  width: clamp(34px, 5vw, 72px);
+  width: var(--smoke-size);
   z-index: 2;
 }
 
 .rover-tab {
   bottom: 112px;
-  left: 16px;
+  right: 16px;
   max-width: min(360px, calc(100vw - 32px));
   position: absolute;
   z-index: 13;
@@ -524,16 +529,48 @@ progress::-moz-progress-bar {
   outline-offset: 2px;
 }
 
+.rover-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
 .rover-tab .rover-dialogue {
-  background: rgba(7, 16, 24, 0.78);
+  background: rgba(7, 16, 24, 0.9);
   margin-top: 6px;
+}
+
+.rover-dialogue__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.rover-dialogue__choice {
+  background: rgba(7, 16, 24, 0.9);
+  border: 1px solid rgba(137, 240, 255, 0.7);
+  color: var(--game-cyan);
+  cursor: pointer;
+  font: inherit;
+  font-size: 8px;
+  line-height: 1.6;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.rover-dialogue__choice:hover,
+.rover-dialogue__choice:focus-visible {
+  background: rgba(137, 240, 255, 0.16);
+  color: var(--game-cream);
+  outline: 2px solid var(--game-cream);
+  outline-offset: 2px;
 }
 
 .hugh-mann {
   height: 76px;
   position: absolute;
   transform: translate(-50%, -100%);
-  transition: left 90ms steps(2, end), top 90ms steps(2, end);
   width: 38px;
   z-index: 4;
 }
@@ -570,6 +607,22 @@ progress::-moz-progress-bar {
   height: 24px;
   top: 50px;
   width: 10px;
+}
+
+.hugh-mann[data-walking] {
+  animation: hugh-mann-bob 0.3s steps(2, end) infinite;
+}
+
+@keyframes hugh-mann-bob {
+  50% {
+    translate: 0 -3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hugh-mann[data-walking] {
+    animation: none;
+  }
 }
 
 .hugh-mann__leg--left { left: 7px; }
