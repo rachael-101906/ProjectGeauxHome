@@ -651,6 +651,7 @@ export default function Base({
     setShowIntroDialogue(false);
     setShowMoveTutorial(false);
     setRoverIntroComplete(true);
+    setShowTravelArrows(true);
 
     transitionTimerRef.current = window.setTimeout(() => {
       setFadeToBlack(true);
@@ -897,7 +898,7 @@ export default function Base({
       >
         {/* CRASH SITE */}
 
-        {currentLocation.id === "arcadia" && (
+        {charactersVisible && (
           <div className="mission-crash-site">
             <img
               className="mission-ship"
@@ -1162,18 +1163,6 @@ export default function Base({
       {/* ================================== */}
       {/* HUD                                */}
       {/* ================================== */}
-
-      {charactersVisible && (
-        <HUD
-          currentObjective={
-            savedGame.objectiveUnlocked
-              ? savedGame.currentObjective
-              : ""
-          }
-          onSelectTool={handleSelectTool}
-          selectedTool={selectedTool}
-        />
-      )}
 
       {/* ================================== */}
       {/* GAME ACTIONS                       */}
