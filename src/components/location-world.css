@@ -46,6 +46,15 @@
     top 70ms linear;
 }
 
+.location-decoration {
+  image-rendering: pixelated;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
 .location-entity {
   align-items: center;
   display: flex;

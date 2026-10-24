@@ -107,6 +107,20 @@ export default function LocationWorld({
           width: WORLD_WIDTH,
         }}
       >
+        {(scene.decorations ?? []).map((decoration) => (
+          <img
+            alt=""
+            aria-hidden="true"
+            className="location-decoration"
+            key={decoration.id}
+            src={decoration.image}
+            style={{
+              left: decoration.x,
+              top: decoration.y,
+              width: decoration.width,
+            }}
+          />
+        ))}
         {scene.resourceNodes.map((node) => (
           <div
             aria-label={`${node.resource} resource node`}

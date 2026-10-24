@@ -1,8 +1,12 @@
-import arcadiaBackground from "../components/assets/backgrounds/7.png";
+import arcadiaBackground from "../components/assets/backgrounds/6.png";
 import albaBackground from "../components/assets/backgrounds/9.png";
-import tempeBackground from "../components/assets/backgrounds/6.png";
-import vastitasBackground from "../components/assets/backgrounds/6.png";
+import tempeBackground from "../components/assets/backgrounds/11.png";
+import vastitasBackground from "../components/assets/backgrounds/7.png";
 import olympusBackground from "../components/assets/backgrounds/10.png";
+import roverDecoration from "../components/assets/decorations/12.png";
+import shipDecoration from "../components/assets/decorations/13.png";
+import habitatDecoration from "../components/assets/decorations/14.png";
+import crashFireDecoration from "../components/assets/decorations/19.png";
 
 const locations = [
   {
@@ -15,6 +19,12 @@ const locations = [
     difficulty: "LOW",
     activity: "HOME BASE",
     spawn: { x: 1200, y: 900 },
+    decorations: [
+      { id: "crashed-ship", image: shipDecoration, x: 720, y: 1090, width: 850 },
+      { id: "crash-fire", image: crashFireDecoration, x: 970, y: 950, width: 350 },
+      { id: "habitat", image: habitatDecoration, x: 1650, y: 1150, width: 750 },
+      { id: "rover", image: roverDecoration, x: 1430, y: 950, width: 620 },
+    ],
     resourceNodes: [
       { id: "ice-1", resource: "Ice", x: 700, y: 710 },
       { id: "iron-1", resource: "Iron", x: 1710, y: 1120 },
