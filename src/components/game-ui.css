@@ -1,0 +1,685 @@
+.game-ui-screen,
+.objectives-overlay,
+.pause-overlay,
+.game-hud {
+  --game-space: #071018;
+  --game-cyan: #89f0ff;
+  --game-cream: #f2e7c9;
+  --game-muted: #80a8b0;
+  --game-panel: rgba(7, 16, 24, 0.94);
+
+  color: var(--game-cream);
+  font-family: "Press Start 2P", cursive;
+}
+
+.game-ui-screen {
+  align-items: center;
+  background:
+    radial-gradient(ellipse at 50% 45%, rgba(28, 67, 79, 0.38), transparent 55%),
+    radial-gradient(circle at 14% 22%, rgba(137, 240, 255, 0.55) 1px, transparent 2px),
+    radial-gradient(circle at 83% 76%, rgba(137, 240, 255, 0.4) 1px, transparent 2px),
+    var(--game-space);
+  background-size: auto, 137px 113px, 181px 157px, auto;
+  display: flex;
+  height: 100vh;
+  justify-content: center;
+  min-height: 600px;
+  overflow: auto;
+  padding: 32px;
+  width: 100%;
+}
+
+.game-panel {
+  background: var(--game-panel);
+  border: 3px solid var(--game-cyan);
+  box-shadow:
+    0 0 0 3px rgba(7, 16, 24, 0.9),
+    0 0 20px rgba(137, 240, 255, 0.22),
+    inset 0 0 22px rgba(137, 240, 255, 0.05);
+  position: relative;
+}
+
+.game-panel::before,
+.game-panel::after {
+  border-color: var(--game-cream);
+  border-style: solid;
+  content: "";
+  height: 8px;
+  position: absolute;
+  width: 8px;
+}
+
+.game-panel::before {
+  border-width: 2px 0 0 2px;
+  left: 7px;
+  top: 7px;
+}
+
+.game-panel::after {
+  border-width: 0 2px 2px 0;
+  bottom: 7px;
+  right: 7px;
+}
+
+.game-eyebrow {
+  color: var(--game-muted);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  line-height: 1.8;
+}
+
+.game-title {
+  color: var(--game-cyan);
+  font-size: clamp(18px, 3vw, 28px);
+  line-height: 1.6;
+  text-shadow: 0 0 12px rgba(137, 240, 255, 0.5);
+}
+
+.game-section-title {
+  color: var(--game-cyan);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.game-button,
+.game-icon-button {
+  background: rgba(7, 16, 24, 0.98);
+  border: 2px solid var(--game-cyan);
+  color: var(--game-cream);
+  cursor: pointer;
+  font: inherit;
+  transition:
+    background-color 150ms ease,
+    box-shadow 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
+}
+
+.game-button {
+  font-size: 11px;
+  line-height: 1.8;
+  min-height: 54px;
+  padding: 12px 20px;
+}
+
+.game-button:hover,
+.game-button:focus-visible,
+.game-icon-button:hover,
+.game-icon-button:focus-visible {
+  background: rgba(137, 240, 255, 0.12);
+  box-shadow: 0 0 14px rgba(137, 240, 255, 0.35);
+  color: var(--game-cyan);
+  outline: none;
+}
+
+.game-button:active,
+.game-icon-button:active {
+  transform: translateY(2px);
+}
+
+.intro-story__panel {
+  max-width: 760px;
+  padding: clamp(28px, 6vw, 64px);
+  width: 100%;
+}
+
+.intro-story__panel > .game-title {
+  margin-top: 12px;
+}
+
+.intro-story__narrative {
+  display: grid;
+  gap: 24px;
+  line-height: 2;
+  margin-top: 34px;
+}
+
+.intro-story__year {
+  color: var(--game-cyan);
+}
+
+.intro-story__objectives {
+  border-top: 1px solid rgba(137, 240, 255, 0.35);
+  margin-top: 30px;
+  padding-top: 24px;
+}
+
+.intro-story__objectives ul {
+  display: grid;
+  gap: 16px;
+  list-style: none;
+  margin-top: 18px;
+}
+
+.intro-story__objectives li {
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+.intro-story__objectives li::before {
+  color: var(--game-cyan);
+  content: "> ";
+}
+
+.intro-story__begin {
+  display: block;
+  margin: 34px auto 0;
+  min-width: min(100%, 300px);
+}
+
+.objectives-overlay,
+.pause-overlay {
+  align-items: center;
+  background: rgba(2, 8, 13, 0.78);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  overflow: auto;
+  padding: 16px;
+  position: fixed;
+  z-index: 20;
+}
+
+.objectives-menu {
+  max-height: calc(100vh - 32px);
+  max-width: 680px;
+  overflow-y: auto;
+  padding: clamp(18px, 3vw, 28px);
+  width: 100%;
+}
+
+.objectives-menu__header {
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(137, 240, 255, 0.35);
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding-bottom: 14px;
+}
+
+.objectives-menu__header .game-title {
+  margin-top: 10px;
+}
+
+.game-icon-button {
+  flex: 0 0 40px;
+  font-size: 14px;
+  height: 40px;
+}
+
+.objectives-menu__overall {
+  align-items: center;
+  color: var(--game-muted);
+  display: grid;
+  font-size: 9px;
+  gap: 12px;
+  grid-template-columns: 1fr auto;
+  line-height: 1.8;
+  margin: 14px 0;
+}
+
+.objectives-menu__percentage {
+  color: var(--game-cyan);
+  font-size: 14px;
+}
+
+.objectives-menu__overall progress {
+  grid-column: 1 / -1;
+}
+
+.objectives-list {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  list-style: none;
+}
+
+.objectives-list__item {
+  background: rgba(137, 240, 255, 0.035);
+  border: 1px solid rgba(137, 240, 255, 0.24);
+  padding: 12px;
+}
+
+.objectives-list__heading {
+  align-items: baseline;
+  color: var(--game-cream);
+  display: flex;
+  font-size: 9px;
+  gap: 12px;
+  justify-content: space-between;
+  line-height: 1.8;
+}
+
+.objectives-list__heading span:last-child {
+  color: var(--game-cyan);
+}
+
+.objectives-list__item progress {
+  margin: 8px 0 6px;
+}
+
+.objectives-list__status,
+.objectives-menu__hint {
+  color: var(--game-muted);
+  font-size: 8px;
+  line-height: 1.8;
+}
+
+.objectives-menu__hint {
+  margin-top: 14px;
+}
+
+.objectives-menu__hint span {
+  color: var(--game-cyan);
+  padding: 0 6px;
+}
+
+progress {
+  appearance: none;
+  background: rgba(137, 240, 255, 0.12);
+  border: 1px solid rgba(137, 240, 255, 0.48);
+  display: block;
+  height: 10px;
+  overflow: hidden;
+  width: 100%;
+}
+
+progress::-webkit-progress-bar {
+  background: transparent;
+}
+
+progress::-webkit-progress-value {
+  background: var(--game-cyan);
+  box-shadow: 0 0 8px rgba(137, 240, 255, 0.8);
+}
+
+progress::-moz-progress-bar {
+  background: var(--game-cyan);
+  box-shadow: 0 0 8px rgba(137, 240, 255, 0.8);
+}
+
+.game-hud {
+  color: var(--game-cream);
+  font-family: "Press Start 2P", cursive;
+  inset: 0;
+  pointer-events: none;
+  position: fixed;
+  z-index: 10;
+}
+
+.hud-status,
+.hud-objective,
+.hud-hotbar {
+  background: rgba(7, 16, 24, 0.9);
+  pointer-events: auto;
+  position: absolute;
+}
+
+.hud-status {
+  left: 24px;
+  padding: 20px;
+  top: 24px;
+  width: min(280px, calc(100vw - 48px));
+}
+
+.hud-status > .game-eyebrow {
+  margin-bottom: 14px;
+}
+
+.hud-meter + .hud-meter {
+  margin-top: 12px;
+}
+
+.hud-meter__heading {
+  color: var(--game-cream);
+  display: flex;
+  font-size: 8px;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.hud-objective {
+  padding: 18px 20px;
+  right: 24px;
+  top: 24px;
+  width: min(340px, calc(100vw - 48px));
+}
+
+.hud-objective__text {
+  color: var(--game-cyan);
+  font-size: 10px;
+  line-height: 1.8;
+  margin-top: 10px;
+}
+
+.hud-hotbar {
+  bottom: 24px;
+  display: flex;
+  gap: 8px;
+  left: 50%;
+  padding: 10px;
+  transform: translateX(-50%);
+}
+
+.hud-tool {
+  align-items: center;
+  background: rgba(7, 16, 24, 0.96);
+  border: 2px solid rgba(137, 240, 255, 0.55);
+  color: var(--game-cream);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 8px;
+  gap: 10px;
+  min-height: 58px;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.hud-tool:hover,
+.hud-tool.is-selected {
+  border-color: var(--game-cyan);
+  box-shadow: 0 0 12px rgba(137, 240, 255, 0.32);
+}
+
+.hud-tool__key {
+  align-items: center;
+  border: 1px solid var(--game-cyan);
+  color: var(--game-cyan);
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.hud-tool:focus-visible {
+  outline: 2px solid var(--game-cream);
+  outline-offset: 3px;
+}
+
+.pause-menu {
+  max-width: 440px;
+  padding: 40px;
+  text-align: center;
+  width: 100%;
+}
+
+.pause-menu .game-title {
+  margin-top: 10px;
+}
+
+.pause-menu__actions {
+  display: grid;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.pause-menu__notice {
+  color: var(--game-muted);
+  font-size: 8px;
+  line-height: 1.8;
+  margin-top: 20px;
+}
+
+.pause-menu__quit {
+  border-color: #ff8f8f;
+  color: #ffb0a8;
+}
+
+.pause-menu__quit:hover,
+.pause-menu__quit:focus-visible {
+  background: rgba(255, 143, 143, 0.1);
+  box-shadow: 0 0 14px rgba(255, 143, 143, 0.25);
+  color: #ffd0c8;
+}
+
+.mission-screen {
+  --game-cyan: #89f0ff;
+  --game-cream: #f2e7c9;
+  --game-muted: #80a8b0;
+
+  background: #071018;
+  color: var(--game-cream);
+  font-family: "Press Start 2P", cursive;
+  height: 100vh;
+  min-height: 600px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.mission-landscape {
+  background:
+    radial-gradient(circle at 16% 17%, rgba(137, 240, 255, 0.8) 1px, transparent 2px),
+    radial-gradient(circle at 76% 22%, rgba(242, 231, 201, 0.65) 1px, transparent 2px),
+    radial-gradient(circle at 89% 40%, rgba(137, 240, 255, 0.6) 1px, transparent 2px),
+    linear-gradient(180deg, #071018 0%, #172736 53%, #5c3c3b 100%);
+  background-size: 101px 89px, 137px 113px, 173px 151px, auto;
+  inset: 0;
+  overflow: hidden;
+  position: absolute;
+}
+
+.mission-sun {
+  background: #efb685;
+  box-shadow:
+    0 0 28px rgba(239, 182, 133, 0.6),
+    0 0 90px rgba(239, 182, 133, 0.22);
+  height: clamp(64px, 11vw, 130px);
+  position: absolute;
+  right: 17%;
+  top: 24%;
+  width: clamp(64px, 11vw, 130px);
+}
+
+.mission-ridge {
+  bottom: 0;
+  left: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.mission-ridge--distant {
+  background: #553a42;
+  bottom: 20%;
+  clip-path: polygon(
+    0 65%,
+    8% 41%,
+    17% 55%,
+    25% 19%,
+    35% 56%,
+    45% 29%,
+    56% 61%,
+    68% 20%,
+    77% 50%,
+    88% 32%,
+    100% 57%,
+    100% 100%,
+    0 100%
+  );
+  height: 30%;
+}
+
+.mission-ridge--near {
+  background: #302d38;
+  bottom: 10%;
+  clip-path: polygon(
+    0 66%,
+    12% 30%,
+    21% 63%,
+    35% 39%,
+    48% 72%,
+    61% 26%,
+    74% 56%,
+    86% 33%,
+    100% 65%,
+    100% 100%,
+    0 100%
+  );
+  height: 26%;
+}
+
+.mission-ground {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 46px,
+      rgba(239, 182, 133, 0.12) 47px 52px,
+      transparent 53px 96px
+    ),
+    linear-gradient(180deg, #44343b, #211f2b);
+  border-top: 3px solid rgba(242, 231, 201, 0.26);
+  bottom: 0;
+  height: 16%;
+  left: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.mission-location {
+  left: 50%;
+  position: absolute;
+  text-align: center;
+  text-shadow: 0 2px 6px #071018;
+  top: 18%;
+  transform: translateX(-50%);
+  width: calc(100% - 48px);
+  z-index: 1;
+}
+
+.mission-location h1 {
+  color: var(--game-cyan);
+  font-size: clamp(16px, 3vw, 28px);
+  line-height: 1.8;
+  margin-top: 12px;
+}
+
+.mission-location > p:last-child {
+  color: var(--game-cream);
+  font-size: 9px;
+  line-height: 1.8;
+  margin-top: 4px;
+}
+
+.mission-save-error {
+  background: rgba(7, 16, 24, 0.94);
+  border: 2px solid #ff8f8f;
+  color: #ffd0c8;
+  font-size: 8px;
+  left: 50%;
+  line-height: 1.8;
+  max-width: min(600px, calc(100vw - 32px));
+  padding: 12px;
+  position: absolute;
+  text-align: center;
+  top: 34%;
+  transform: translateX(-50%);
+  z-index: 12;
+}
+
+.mission-actions {
+  bottom: 106px;
+  display: flex;
+  gap: 12px;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: 11;
+}
+
+.mission-actions .game-button {
+  font-size: 8px;
+  min-height: 42px;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .game-ui-screen {
+    min-height: 100vh;
+    padding: 18px;
+  }
+
+  .intro-story__narrative {
+    font-size: 10px;
+  }
+
+  .objectives-overlay,
+  .pause-overlay {
+    padding: 14px;
+  }
+
+  .objectives-menu {
+    max-height: calc(100vh - 28px);
+    padding: 18px;
+  }
+
+  .objectives-list {
+    grid-template-columns: 1fr;
+  }
+
+  .objectives-list__item {
+    padding: 10px;
+  }
+
+  .objectives-menu__overall {
+    margin: 12px 0;
+  }
+
+  .objectives-list__heading {
+    font-size: 8px;
+  }
+
+  .objectives-menu__hint {
+    font-size: 7px;
+    margin-top: 12px;
+  }
+
+  .hud-status {
+    left: 12px;
+    padding: 14px;
+    top: 12px;
+    width: min(210px, calc(52vw - 18px));
+  }
+
+  .hud-objective {
+    padding: 14px;
+    right: 12px;
+    top: 12px;
+    width: min(210px, calc(48vw - 18px));
+  }
+
+  .hud-status > .game-eyebrow,
+  .hud-objective > .game-eyebrow {
+    font-size: 7px;
+  }
+
+  .hud-objective__text {
+    font-size: 8px;
+  }
+
+  .hud-hotbar {
+    bottom: 12px;
+    gap: 4px;
+    max-width: calc(100vw - 24px);
+    padding: 6px;
+    width: max-content;
+  }
+
+  .hud-tool {
+    flex-direction: column;
+    font-size: 7px;
+    gap: 4px;
+    min-height: 58px;
+    padding: 6px;
+  }
+
+  .mission-actions {
+    bottom: 98px;
+  }
+
+  .mission-actions .game-button {
+    font-size: 7px;
+    padding: 6px;
+  }
+}
