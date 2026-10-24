@@ -3,6 +3,7 @@ import HUD from "../components/HUD.jsx";
 import ObjectivesMenu from "../components/ObjectivesMenu.jsx";
 import PauseMenu from "../components/PauseMenu.jsx";
 import RoverDialogue from "../components/RoverDialogue.jsx";
+import TraderScreen from "./TraderScreen.jsx";
 
 import smoke from "../components/assets/icons/pixel-art-32x32-2f.gif";
 import spaceship from "../components/assets/backgrounds/spaceship.png";
@@ -19,7 +20,9 @@ const MOVE_SPEED_X = 30;
 const MOVE_SPEED_Y = 34;
 // minX/maxX keep Hugh clear of the left and right travel buttons.
 const MOVE_LIMITS = { minX: 10, maxX: 90, minY: 50, maxY: 88 };
-const START_POSITION = { x: 27, y: 72 }; // Spawn beside the crash site so Hugh starts close to the ship.
+const START_POSITION = { x: 18, y: 72 }; // Spawn beside the crashed ship.
+const MINE_SPOT = { x: 55, y: 75 };
+const MINE_REACH = { x: 9, y: 12 };
 
 // R.O.V.E.R. waits on the right side of the crash site (percent of the screen).
 // Hugh can press E when he is within ROVER_REACH of it.
@@ -59,9 +62,17 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const [objectivesOpen, setObjectivesOpen] = useState(false);
   const [paused, setPaused] = useState(false);
   const [pauseNotice, setPauseNotice] = useState("");
-  const [selectedTool, setSelectedTool] = useState(
-    savedGame.selectedTool || "Drill"
-  );
+  const [selectedTool, setSelectedTool] = useState(savedGame.selectedTool || "Drill");
+  const [locationId, setLocationId] = useState(savedGame.location || "arcadia");
+  const [oreCount, setOreCount] = useState(Math.max(0, Number(savedGame.oreCount) || 0));
+  const [minedLocations, setMinedLocations] = useState(Array.isArray(savedGame.minedLocations) ? savedGame.minedLocations : []);
+  const [miningNotice, setMiningNotice] = useState("");
+  const [credits, setCredits] = useState(Math.max(0, Number(savedGame.credits) || 0));
+  const [traderInventory, setTraderInventory] = useState(savedGame.traderInventory || { oxygenFilters: 0, repairKits: 0, drillUpgrades: 0 });
+  const [showTradeScreen, setShowTradeScreen] = useState(false);
+  const [travelMenuOpen, setTravelMenuOpen] = useState(false);
+  const [showLocationTitle, setShowLocationTitle] = useState(true);
+  const [charactersVisible, setCharactersVisible] = useState(false);
   const [travelTarget, setTravelTarget] = useState(null);
   const [roverOpen, setRoverOpen] = useState(false);
   const [roverLine, setRoverLine] = useState(ROVER_ASK_NAME);
@@ -76,17 +87,11 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const nearRoverRef = useRef(false);
   const [nearRover, setNearRover] = useState(false);
 
-  const movementBlocked =
-    paused || objectivesOpen || roverOpen || Boolean(travelTarget);
+  const movementBlocked = paused || objectivesOpen || roverOpen || Boolean(travelTarget) || travelMenuOpen || roverSequence || fadeToBlack || showTradeScreen || showLocationTitle || !charactersVisible;
   const blockedRef = useRef(movementBlocked);
   blockedRef.current = movementBlocked;
 
-  const locationIndex = Math.max(
-    0,
-    locations.findIndex(
-      (location) => location.id === (savedGame.location || "arcadia")
-    )
-  );
+  const locationIndex = Math.max(0, locations.findIndex((location) => location.id === locationId));
   const currentLocation = locations[locationIndex];
   const previousLocation =
     locations[(locationIndex - 1 + locations.length) % locations.length];
@@ -96,18 +101,63 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     if (onSave) {
       onSave({
         selectedTool,
-        location: savedGame.location || "arcadia",
+        location: locationId,
         currentObjective: savedGame.currentObjective,
         objectives: savedGame.objectives,
+        oreCount,
+        minedLocations,
+        credits,
+        traderInventory,
       });
     }
   }, [
     onSave,
     savedGame.currentObjective,
-    savedGame.location,
+    locationId,
     savedGame.objectives,
     selectedTool,
+    oreCount,
+    minedLocations,
+    credits,
+    traderInventory,
   ]);
+
+  // Brief title card on every map: hold for one second, fade, then reveal characters.
+  useEffect(() => {
+    setShowLocationTitle(true);
+    setCharactersVisible(false);
+    const fadeTitle = window.setTimeout(() => setShowLocationTitle(false), 1000);
+    const revealScene = window.setTimeout(() => setCharactersVisible(true), 1600);
+    return () => { window.clearTimeout(fadeTitle); window.clearTimeout(revealScene); };
+  }, [locationId]);
+
+  function mineResource() {
+    const { x, y } = positionRef.current;
+    if (Math.abs(x - MINE_SPOT.x) > MINE_REACH.x || Math.abs(y - MINE_SPOT.y) > MINE_REACH.y) { setMiningNotice("MOVE CLOSER TO THE DEPOSIT"); return; }
+    if (selectedTool !== "Drill") { setMiningNotice("EQUIP THE DRILL FIRST"); return; }
+    if (minedLocations.includes(locationId)) { setMiningNotice("THIS DEPOSIT IS EMPTY"); return; }
+    const nextOre = oreCount + 1;
+    const nextMined = [...minedLocations, locationId];
+    setOreCount(nextOre); setMinedLocations(nextMined); setMiningNotice("+1 MARTIAN ORE");
+    onSave?.({ oreCount: nextOre, minedLocations: nextMined });
+    window.setTimeout(() => setMiningNotice(""), 1800);
+  }
+
+  function sellOre(quantity) {
+    const amount = quantity === "all" ? oreCount : Math.min(1, oreCount);
+    if (!amount) return;
+    const nextOre = oreCount - amount, nextCredits = credits + amount * 10;
+    setOreCount(nextOre); setCredits(nextCredits);
+    onSave?.({ oreCount: nextOre, credits: nextCredits });
+  }
+
+  function buyTraderItem(itemId, price) {
+    if (credits < price) return;
+    const nextCredits = credits - price;
+    const nextInventory = { ...traderInventory, [itemId]: (traderInventory[itemId] || 0) + 1 };
+    setCredits(nextCredits); setTraderInventory(nextInventory);
+    onSave?.({ credits: nextCredits, traderInventory: nextInventory });
+  }
 
   // Smooth movement loop
   useEffect(() => {
