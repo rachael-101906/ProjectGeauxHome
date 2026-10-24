@@ -356,7 +356,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
             <img className="mission-ship-smoke" src={smoke} alt="" />
           </div>
         )}
-        {currentLocation.id === "arcadia" && (
+        {charactersVisible && (
           <div
             aria-label="Hugh Mann"
             className="hugh-mann"
@@ -372,7 +372,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         )}
       </div>
 
-      {currentLocation.id === "arcadia" && (
+      {charactersVisible && (
         <button
           aria-label="Talk to R.O.V.E.R."
           className="rover-npc"
@@ -389,7 +389,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         </button>
       )}
 
-      <header className="mission-location">
+      {showLocationTitle && <header className="mission-location location-title-splash">
         <p className="game-eyebrow">PROJECT GEAUX HOME // MISSION 01</p>
         <h1>{currentLocation.name}</h1>
         <p>
@@ -397,9 +397,17 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
             ? "CRASH SITE // SECTOR 01"
             : "TRAVEL ROUTE // SECTOR 02"}
         </p>
-      </header>
+      </header>}
 
-      <button
+      {charactersVisible && !minedLocations.includes(locationId) && (
+        <button className="mine-node" onClick={mineResource} style={{ left: `${MINE_SPOT.x}%`, top: `${MINE_SPOT.y}%` }} type="button" aria-label="Mine the nearby ore deposit">
+          <span className="mine-node__rock" aria-hidden="true">◆</span><span className="mine-node__label">ORE [E]</span>
+        </button>
+      )}
+      {miningNotice && <div className="mining-notice" role="status">{miningNotice}</div>}
+      {charactersVisible && <div className="ore-counter" aria-live="polite">MARTIAN ORE: {oreCount}</div>}
+
+      {charactersVisible && <button
         aria-label={`Travel toward ${previousLocation.name}`}
         className="edge-travel edge-travel--left"
         onClick={() => setTravelTarget(previousLocation)}
@@ -454,8 +462,12 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
       )}
 
       {roverSequence && (
-        <div className="rover-escort" aria-hidden="true">
-          <img className="rover-escort__rover" src={roverSprite} alt="" />
+        <div className="rover-ride-cutscene" aria-hidden="true">
+          <div className="rover-ride-cutscene__rover"><img src={roverSprite} alt="" /></div>
+          <div className="rover-ride-cutscene__hugh">
+            <span className="hugh-mann__head" /><span className="hugh-mann__body" />
+            <span className="hugh-mann__leg hugh-mann__leg--left" /><span className="hugh-mann__leg hugh-mann__leg--right" />
+          </div>
         </div>
       )}
       <div className={`black-fade${fadeToBlack ? " black-fade--active" : ""}`} />
@@ -502,6 +514,25 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
           onSettings={() => setPauseNotice("NO CONFIGURABLE SETTINGS YET.")}
           notice={pauseNotice}
         />
+      )}
+
+      {showTradeScreen && (
+        <TraderScreen credits={credits} oreCount={oreCount} inventory={traderInventory}
+          onSellOre={sellOre} onBuyItem={buyTraderItem} onClose={() => setShowTradeScreen(false)} />
+      )}
+
+      {travelMenuOpen && (
+        <div className="travel-menu-overlay" role="dialog" aria-modal="true" aria-labelledby="rover-destination-title">
+          <section className="game-panel travel-menu-panel">
+            <p className="game-eyebrow">R.O.V.E.R. // MARS TRANSIT</p><h2 id="rover-destination-title">WHERE TO, HUGH?</h2>
+            <p>Choose any mapped destination and I will drive you there.</p>
+            <div className="travel-destinations">{locations.map((destination) => (
+              <button className="game-button" key={destination.id} disabled={destination.id === locationId}
+                onClick={() => chooseRoverDestination(destination)} type="button">{destination.name}</button>
+            ))}</div>
+            <button className="game-button" onClick={() => setTravelMenuOpen(false)} type="button">CANCEL</button>
+          </section>
+        </div>
       )}
 
       {travelTarget && (
