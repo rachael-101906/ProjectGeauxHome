@@ -156,13 +156,6 @@
   line-height: 1.8;
 }
 
-.intro-story__objectives > p {
-  color: var(--game-cream);
-  font-size: 11px;
-  line-height: 1.8;
-  margin-top: 18px;
-}
-
 .intro-story__objectives li::before {
   color: var(--game-cyan);
   content: "> ";
@@ -268,7 +261,7 @@
 .objectives-list__status,
 .objectives-menu__hint {
   color: var(--game-muted);
-  font-size: 8px;
+  font-size: 7px;
   line-height: 1.8;
 }
 
@@ -286,7 +279,7 @@ progress {
   background: rgba(137, 240, 255, 0.12);
   border: 1px solid rgba(137, 240, 255, 0.48);
   display: block;
-  height: 10px;
+  height: 6px;
   overflow: hidden;
   width: 100%;
 }
@@ -323,26 +316,28 @@ progress::-moz-progress-bar {
 }
 
 .hud-status {
-  left: 24px;
-  padding: 20px;
-  top: 24px;
-  width: min(280px, calc(100vw - 48px));
+  background: rgba(7, 16, 24, 0.68);
+  left: 12px;
+  padding: 8px;
+  top: 12px;
+  width: min(154px, calc(100vw - 24px));
 }
 
 .hud-status > .game-eyebrow {
-  margin-bottom: 14px;
+  font-size: 7px;
+  margin-bottom: 8px;
 }
 
 .hud-meter + .hud-meter {
-  margin-top: 12px;
+  margin-top: 5px;
 }
 
 .hud-meter__heading {
   color: var(--game-cream);
   display: flex;
-  font-size: 8px;
+  font-size: 6px;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 3px;
 }
 
 .hud-objective {
@@ -359,70 +354,50 @@ progress::-moz-progress-bar {
   margin-top: 10px;
 }
 
-.current-objective__header {
+.hud-hotbar {
+  bottom: 12px;
+  display: flex;
+  gap: 4px;
+  left: auto;
+  padding: 6px;
+  right: 12px;
+  transform: none;
+}
+
+.hud-tool {
   align-items: center;
-  display: flex;
-  justify-content: space-between;
-}
-
-.current-objective progress {
-  margin-top: 12px;
-}
-
-.current-objective--expanded {
-  position: relative;
-  right: auto;
-  top: auto;
-  width: min(560px, calc(100vw - 32px));
-}
-
-.travel-menu,
-.rover-dialogue {
-  max-width: 620px;
-  padding: clamp(20px, 4vw, 36px);
-  width: 100%;
-}
-
-.travel-menu .game-title,
-.rover-dialogue .game-title {
-  margin-top: 10px;
-}
-
-.travel-menu__message,
-.rover-dialogue__lines {
+  background: rgba(7, 16, 24, 0.96);
+  border: 2px solid rgba(137, 240, 255, 0.55);
   color: var(--game-cream);
-  font-size: 10px;
-  line-height: 2;
-  margin-top: 22px;
-}
-
-.travel-menu__destinations {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 22px;
-}
-
-.travel-menu__destinations .game-button {
-  font-size: 8px;
-}
-
-.travel-menu__destinations .game-button:disabled {
-  border-color: rgba(137, 240, 255, 0.3);
-  color: var(--game-muted);
-  cursor: default;
-}
-
-.rover-dialogue__lines {
-  display: grid;
-  gap: 12px;
-}
-
-.rover-dialogue__actions {
+  cursor: pointer;
   display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 24px;
+  font: inherit;
+  font-size: 6px;
+  gap: 5px;
+  min-height: 38px;
+  padding: 5px 7px;
+  white-space: nowrap;
+}
+
+.hud-tool:hover,
+.hud-tool.is-selected {
+  border-color: var(--game-cyan);
+  box-shadow: 0 0 12px rgba(137, 240, 255, 0.32);
+}
+
+.hud-tool__key {
+  align-items: center;
+  border: 1px solid var(--game-cyan);
+  color: var(--game-cyan);
+  display: inline-flex;
+  height: 20px;
+  justify-content: center;
+  width: 20px;
+}
+
+.hud-tool:focus-visible {
+  outline: 2px solid var(--game-cream);
+  outline-offset: 3px;
 }
 
 .pause-menu {
@@ -486,6 +461,206 @@ progress::-moz-progress-bar {
   inset: 0;
   overflow: hidden;
   position: absolute;
+}
+
+.mission-landscape--image {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.mission-ship,
+.mission-ship-smoke {
+  image-rendering: pixelated;
+  pointer-events: none;
+  position: absolute;
+}
+
+.mission-crash-site {
+  bottom: 4%;
+  left: 3%;
+  position: absolute;
+  width: min(38vw, 560px);
+}
+
+.mission-ship {
+  display: block;
+  position: relative;
+  width: 100%;
+  z-index: 1;
+}
+
+.mission-ship-smoke {
+  bottom: 61%;
+  left: 12%;
+  mix-blend-mode: screen;
+  position: absolute;
+  width: clamp(34px, 5vw, 72px);
+  z-index: 2;
+}
+
+.rover-tab {
+  bottom: 112px;
+  left: 16px;
+  max-width: min(360px, calc(100vw - 32px));
+  position: absolute;
+  z-index: 13;
+}
+
+.rover-tab__button {
+  background: rgba(7, 16, 24, 0.58);
+  border: 1px solid rgba(137, 240, 255, 0.7);
+  color: var(--game-cyan);
+  cursor: pointer;
+  font: inherit;
+  font-size: 8px;
+  padding: 9px 12px;
+}
+
+.rover-tab__button:hover,
+.rover-tab__button:focus-visible {
+  background: rgba(7, 16, 24, 0.82);
+  outline: 2px solid var(--game-cream);
+  outline-offset: 2px;
+}
+
+.rover-tab .rover-dialogue {
+  background: rgba(7, 16, 24, 0.78);
+  margin-top: 6px;
+}
+
+.hugh-mann {
+  height: 76px;
+  position: absolute;
+  transform: translate(-50%, -100%);
+  transition: left 90ms steps(2, end), top 90ms steps(2, end);
+  width: 38px;
+  z-index: 4;
+}
+
+.hugh-mann__head,
+.hugh-mann__body,
+.hugh-mann__leg {
+  display: block;
+  position: absolute;
+}
+
+.hugh-mann__head {
+  background: #e0a37e;
+  border: 4px solid #241d2a;
+  border-radius: 50%;
+  height: 22px;
+  left: 8px;
+  top: 0;
+  width: 22px;
+}
+
+.hugh-mann__body {
+  background: #4b91a1;
+  border: 4px solid #241d2a;
+  height: 32px;
+  left: 5px;
+  top: 20px;
+  width: 28px;
+}
+
+.hugh-mann__leg {
+  background: #302d38;
+  border: 3px solid #241d2a;
+  height: 24px;
+  top: 50px;
+  width: 10px;
+}
+
+.hugh-mann__leg--left { left: 7px; }
+.hugh-mann__leg--right { right: 7px; }
+
+.hugh-mann::after {
+  color: var(--game-cream);
+  content: "HUGH MANN";
+  font-size: 7px;
+  left: 50%;
+  position: absolute;
+  text-shadow: 0 1px 3px #071018;
+  top: -18px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.edge-travel {
+  align-items: center;
+  background: rgba(7, 16, 24, 0.82);
+  border: 2px solid var(--game-cyan);
+  color: var(--game-cream);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  gap: 10px;
+  min-height: 74px;
+  padding: 10px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 11;
+}
+
+.edge-travel:hover,
+.edge-travel:focus-visible {
+  background: rgba(137, 240, 255, 0.16);
+  box-shadow: 0 0 16px rgba(137, 240, 255, 0.35);
+  outline: none;
+}
+
+.edge-travel span {
+  color: var(--game-cyan);
+  font-size: 28px;
+}
+
+.edge-travel small {
+  font-size: 7px;
+  max-width: 78px;
+  line-height: 1.6;
+}
+
+.edge-travel--left { left: 12px; }
+.edge-travel--right { right: 12px; }
+
+.travel-prompt {
+  align-items: center;
+  background: rgba(2, 8, 13, 0.78);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 16px;
+  position: fixed;
+  z-index: 30;
+}
+
+.travel-prompt__panel {
+  max-width: 480px;
+  padding: 30px;
+  text-align: center;
+  width: 100%;
+}
+
+.travel-prompt__panel h2 {
+  color: var(--game-cyan);
+  font-size: 15px;
+  line-height: 1.8;
+  margin-top: 14px;
+}
+
+.travel-prompt__panel > p:not(.game-eyebrow) {
+  font-size: 9px;
+  line-height: 1.8;
+  margin-top: 18px;
+}
+
+.travel-prompt__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
 }
 
 .mission-sun {
@@ -569,22 +744,17 @@ progress::-moz-progress-bar {
   position: absolute;
   text-align: center;
   text-shadow: 0 2px 6px #071018;
-  top: 24px;
+  top: 18%;
   transform: translateX(-50%);
-  width: min(240px, calc(100% - 32px));
+  width: calc(100% - 48px);
   z-index: 1;
-}
-
-.mission-location .game-eyebrow,
-.mission-location > p:last-child {
-  font-size: 6px;
 }
 
 .mission-location h1 {
   color: var(--game-cyan);
-  font-size: 12px;
-  line-height: 1.5;
-  margin-top: 5px;
+  font-size: clamp(16px, 3vw, 28px);
+  line-height: 1.8;
+  margin-top: 12px;
 }
 
 .mission-location > p:last-child {
@@ -611,13 +781,12 @@ progress::-moz-progress-bar {
 }
 
 .mission-actions {
-  bottom: auto;
+  bottom: 62px;
   display: flex;
   gap: 12px;
-  left: 50%;
+  left: auto;
   position: absolute;
-  top: 70%;
-  transform: translateX(-50%);
+  right: 12px;
   z-index: 11;
 }
 
@@ -692,23 +861,28 @@ progress::-moz-progress-bar {
     font-size: 8px;
   }
 
+  .hud-hotbar {
+    bottom: 12px;
+    gap: 4px;
+    max-width: calc(100vw - 24px);
+    padding: 6px;
+    width: max-content;
+  }
+
+  .hud-tool {
+    flex-direction: column;
+    font-size: 7px;
+    gap: 4px;
+    min-height: 58px;
+    padding: 6px;
+  }
+
   .mission-actions {
-    flex-wrap: wrap;
-    justify-content: center;
-    top: 64%;
-    width: calc(100% - 20px);
+    bottom: 98px;
   }
 
   .mission-actions .game-button {
     font-size: 7px;
     padding: 6px;
-  }
-
-  .travel-menu__destinations {
-    grid-template-columns: 1fr;
-  }
-
-  .rover-dialogue__actions {
-    flex-wrap: wrap;
   }
 }
