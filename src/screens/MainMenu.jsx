@@ -2,8 +2,8 @@
 
 import React from "react";
 
-import background from "..\components\assets\backgrounds\project_geaux_home_background.png";
-import logo from "..\components\assets\logos\project_geaux_home_logo.png";
+import background from "../components/assets/backgrounds/Project Geaux Home.png";
+import logo from "../components/assets/logos/project geaux home main logo.png";
 
 export default function MainMenu() {
   return (
