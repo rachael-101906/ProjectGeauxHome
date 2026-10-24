@@ -5,12 +5,12 @@ import PauseMenu from "../components/PauseMenu.jsx";
 import RoverDialogue from "../components/RoverDialogue.jsx";
 
 import smoke from "../components/assets/icons/pixel-art-32x32-2f.gif";
-import spaceship from "../components/assets/backgrounds/spaceship.png";
+import spaceship from "../components/assets/icons/spaceship.png";
 import arcadia from "../components/assets/backgrounds/arcadia.png";
 import albaMons from "../components/assets/backgrounds/alba-mons.png";
 import tempeTerra from "../components/assets/backgrounds/tempe-terra.png";
 import vastitasBorealis from "../components/assets/backgrounds/vastitas-borealis.png";
-import roverSprite from "../components/assets/backgrounds/rover.png";
+import roverSprite from "../components/assets/characters/rover.png";
 
 import { rover_dialogue, user_dialogue } from "../data/dialogue.js";
 
