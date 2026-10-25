@@ -357,7 +357,7 @@ progress::-moz-progress-bar {
   background: #29232b;
   border: 2px solid #684532;
   box-sizing: border-box;
-  height: 100px;
+  height: 40px;
   overflow: hidden;
   position: relative;
   width: 100%;
@@ -366,12 +366,13 @@ progress::-moz-progress-bar {
 .hud-health-art img {
   height: 112px;
   image-rendering: pixelated;
+  align-self: center;
   left: 50%;
   object-fit: cover;
   position: absolute;
-  top: 50%;
+  top: 60%;
   transform: translate(-50%, -50%);
-  width: 80px; 
+  width: 100px; 
 }
 
 .hud-objective {
