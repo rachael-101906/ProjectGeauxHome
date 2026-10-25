@@ -1807,3 +1807,12 @@ progress::-moz-progress-bar {
 .game-ending__panel h2 { color: var(--game-cyan); font-size: clamp(20px, 4vw, 34px); margin: 12px 0 18px; }
 .game-ending__panel p:not(.game-eyebrow) { font-size: 9px; line-height: 2; }
 .inventory-grid { gap: 8px; } .inventory-grid .inventory-item { margin: 0; padding: 10px 12px; }
+
+/* ---- Ending cutscene ---- */
+.end-cutscene { position: fixed; inset: 0; background: #000; z-index: 3000; display: grid; place-items: center; }
+.end-cutscene__video { width: 100%; height: 100%; object-fit: contain; transition: opacity 600ms ease; }
+.end-cutscene__skip { position: absolute; right: 18px; bottom: 18px; opacity: 0.8; }
+.end-cutscene__play { position: absolute; }
+.end-cutscene__end { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: 18px; font-family: "Press Start 2P", cursive; color: var(--game-cream); animation: storm-in 800ms ease-out both; }
+.end-cutscene__end h1 { font-size: clamp(28px, 5vw, 56px); margin: 0; text-shadow: 0 0 18px rgba(137, 240, 255, 0.6); }
+.end-cutscene__end p { font-size: 10px; line-height: 2; margin: 0; }

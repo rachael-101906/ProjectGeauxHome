@@ -234,7 +234,7 @@ function loadWallet(saved = {}) {
 // BASE GAME
 // ============================================
 
-export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) {
+export default function Base({ onGameComplete, onMainMenu, onSave, saveError, savedGame = {} }) {
   // ------------------------------------------
   // GAME STATE
   // ------------------------------------------
@@ -686,8 +686,14 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     setBossDefeated(true);
     setShowVictory(true);
     saveProgress({ bossDefeated: true });
-    later(() => setShowVictory(false), 5000);
+    // Victory banner, then the ending cutscene (which wraps up the game and returns to the title).
+    later(() => {
+      setShowVictory(false);
+      onGameComplete?.();
+    }, 3500);
   }
+
+  if (import.meta.env.DEV) window.__defeatBoss = defeatBoss; // testing shortcut
 
   const walletRef = useRef(wallet);
   walletRef.current = wallet;
