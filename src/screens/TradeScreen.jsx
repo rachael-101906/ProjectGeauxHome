@@ -12,7 +12,7 @@ import ResourceIcon from '../components/ResourceIcon'
 
 const TABS = [
   { id: 'martian', label: 'Dr. Oxy Genn', sub: 'Buys ore', Icon: Rocket },
-  { id: 'robot', label: 'DJ-TMoney', sub: 'Sells gear', Icon: Users },
+  { id: 'robot', label: 'DJ-CMoney', sub: 'Sells gear', Icon: Users },
   { id: 'human', label: 'Captain McMars', sub: 'Ship upgrades', Icon: Bot },
 ]
 

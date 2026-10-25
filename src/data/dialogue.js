@@ -49,10 +49,10 @@ const TRADER_DIALOGUE = {
   human: {
     speaker: "CAPTAIN McMARS",
     intro: [
-      "Captain McMars reporting. I specialize in ship systems and upgrades.",
-      "Bring the required raw materials, and we can restore the Comm Array, Life Support, Fusion Power, and Propulsion in sequence.",
+      "Aye, ahoy, me matie. Captain McMars reportin' for duty. Me and me crew of two specialize in ship systems and upgrades along with my trusty cyborg parrot, Mr. Squawkers",
+      "Bring the required raw goodies, and we can fix the Comm Array, Life Support, Fusion Power, and Propulsion of your fine ship. It's always good business with a space pirate, me matie!",
     ],
-    repeat: "Back again? Let us get those ship systems online.",
+    repeat: "Arg, look who it is, Mr. Squawkers. Back again, space cowboy? We get those ship systems online, arg.",
     topics: [
       {
         label: "WHAT DOES EACH SYSTEM DO?",

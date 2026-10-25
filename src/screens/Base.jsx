@@ -129,7 +129,7 @@ const locations = [
   { id: "albaMons", name: "ALBA MONS", asset: albaMons },
   { id: "tempeTerra", name: "TEMPE TERRA", asset: tempeTerra },
   { id: "vastitas", name: "VASTITAS BOREALIS", asset: vastitasBorealis },
-  // Mobs live here, and the sulfur air means Hugh needs DJ-TMoney's Filter to enter.
+  // Mobs live here, and the sulfur air means Hugh needs DJ-CMoney's Filter to enter.
   { id: "olympus", name: "OLYMPUS MONS", asset: olympusMons, needsFilter: true },
 ];
 
@@ -449,7 +449,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     if (selectedTool !== "Drill") return flashNotice("EQUIP THE DRILL [1]");
     const type = oreTypes[node.ore];
     if (type.needsFilter && !wallet.gear.hasFilter)
-      return flashNotice("NEED A SULFUR FILTER (DJ-TMONEY)");
+      return flashNotice("NEED A SULFUR FILTER (DJ-CMONEY)");
     const current = nodeHealth[node.id] ?? type.health;
     if (current <= 0) return flashNotice("DEPOSIT DEPLETED");
 
@@ -787,7 +787,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
             label: `${destination.name}${destination.needsFilter && !wallet.gear.hasFilter ? " (NEED FILTER)" : ""}`,
             onClick: () =>
               destination.needsFilter && !wallet.gear.hasFilter
-                ? (closeRover(), flashNotice("BUY A FILTER FROM DJ-TMONEY FIRST"))
+                ? (closeRover(), flashNotice("BUY A FILTER FROM DJ-CMONEY FIRST"))
                 : rideRover(destination),
           })),
         { label: "NOT NOW", onClick: closeRover },
@@ -1168,7 +1168,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
             <h2 id="travel-prompt-title">TRAVEL TO {travelTarget.name}?</h2>
             <p>
               {travelLocked
-                ? "The sulfur air will choke you. Buy a FILTER from DJ-TMoney at the Vastitas market first."
+                ? "The sulfur air will choke you. Buy a FILTER from DJ-CMoney at the Vastitas market first."
                 : travelTarget.needsFilter
                   ? "Filter equipped. Zenos roam here: equip the BLASTER [2] and fire with SPACE or click."
                   : "The route ahead will move you away from the crash site."}
