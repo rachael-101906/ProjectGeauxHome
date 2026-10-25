@@ -20,6 +20,7 @@ import albaMons from "../components/assets/backgrounds/alba-mons.png";
 import tempeTerra from "../components/assets/backgrounds/tempe-terra.png";
 import vastitasBorealis from "../components/assets/backgrounds/vastitas-borealis.png";
 import olympusMons from "../components/assets/backgrounds/olympus-basalt.png";
+import finalBossMusic from "../components/audio/final_boss.mp3";
 import olympusBoss from "../components/assets/backgrounds/olympus-boss.png";
 
 import { startRandomEvents } from "../systems/events.js";
@@ -256,6 +257,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const [storm, setStorm] = useState(null);
   const [bossDefeated, setBossDefeated] = useState(Boolean(savedGame.bossDefeated));
   const [showVictory, setShowVictory] = useState(false);
+  const bossMusicRef = useRef(null);
 
   // Proximity prompts
   const [nearRover, setNearRover] = useState(false);
@@ -271,6 +273,33 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const [showMoveTutorial, setShowMoveTutorial] = useState(!savedGame.roverIntroComplete);
   // Ride: null -> "jump" (Hugh hops on) -> "ride" (both drive off) -> fade -> new map.
   const [rideStage, setRideStage] = useState(null);
+
+  useEffect(() => {
+    const shouldPlayBossMusic =
+      locationId === "caldera" && charactersVisible && !bossDefeated;
+
+    if (!shouldPlayBossMusic) {
+      bossMusicRef.current?.pause();
+      bossMusicRef.current = null;
+      return undefined;
+    }
+
+    const music = new Audio(finalBossMusic);
+    music.loop = true;
+    music.volume = 0.5;
+    bossMusicRef.current = music;
+    music.play().catch(() => {
+      // Playback can be blocked until the player interacts with the page.
+    });
+
+    return () => {
+      music.pause();
+      music.currentTime = 0;
+      if (bossMusicRef.current === music) {
+        bossMusicRef.current = null;
+      }
+    };
+  }, [bossDefeated, charactersVisible, locationId]);
 
   // ------------------------------------------
   // REFS
