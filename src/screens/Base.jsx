@@ -114,7 +114,8 @@ const DEFAULT_WALLET = {
   upgrades: {},
 };
 
-const LOCATION_TITLE_DURATION = 1000;
+const LOCATION_TITLE_DURATION = 5000; // how long the location title card stays up (ms)
+const TITLE_SKIP_AFTER = 800; // after this, any key or click skips the rest of the card
 const INTRO_DURATION = 1200;
 const FADE_DURATION = 1000;
 
@@ -392,11 +393,27 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     setShowLocationTitle(true);
     setCharactersVisible(false);
     setNodeHealth({}); // Fresh deposits each time Hugh arrives on a map.
-    const timer = window.setTimeout(() => {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
       setShowLocationTitle(false);
       setCharactersVisible(true);
-    }, LOCATION_TITLE_DURATION);
-    return () => window.clearTimeout(timer);
+    };
+    const timer = window.setTimeout(finish, LOCATION_TITLE_DURATION);
+    // Let impatient players skip the card (but not by accident the instant it appears).
+    const shownAt = performance.now();
+    const skip = (event) => {
+      if (event.repeat || performance.now() - shownAt < TITLE_SKIP_AFTER) return;
+      finish();
+    };
+    window.addEventListener("keydown", skip);
+    window.addEventListener("pointerdown", skip);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("keydown", skip);
+      window.removeEventListener("pointerdown", skip);
+    };
   }, [locationId]);
 
   // ------------------------------------------
@@ -1102,6 +1119,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
           <p className="game-eyebrow">PROJECT GEAUX HOME // MISSION 01</p>
           <h1>{currentLocation.name}</h1>
           <p>{LOCATION_SUBTITLES[locationId] ?? "TRAVEL ROUTE // SECTOR 02"}</p>
+          <small className="location-title-splash__skip">PRESS ANY KEY</small>
         </header>
       )}
 

@@ -1,27 +1,67 @@
-// ElevenLabs voice lines, fetched through the /api/tts proxy (see vite.config.js).
-// Returns { audio, startTimes } where startTimes[i] = second character i is spoken,
-// or null if voice is unavailable (no key, offline, static build) — callers then
-// fall back to the plain typewriter.
+// Voice lines. Two sources, checked in this order:
+//
+// 1. PRE-MADE FILES (recommended for the demo: free, instant, works offline + on a static deploy)
+//    Drop .mp3/.wav/.m4a files into src/components/assets/voice/ and map each one to the exact
+//    line it speaks in src/data/voiceFiles.js.
+//
+// 2. LIVE ELEVENLABS (generates any line on the fly, needs an API key + `npm run dev`/`preview`)
+//    Fetched through the /api/tts proxy in vite.config.js. Put ELEVENLABS_API_KEY in .env.local.
+//
+// Returns { audio, startTimes } (startTimes[i] = second character i is spoken; empty for
+// pre-made files, so the dialogue box falls back to the typewriter) or null if no voice.
 
+import { VOICE_FILES } from "../data/voiceFiles.js";
+
+const voiceAssets = import.meta.glob("../components/assets/voice/**/*.{mp3,wav,m4a,ogg}", {
+  eager: true,
+  query: "?url",
+  import: "default",
+});
+const voiceAssetByName = Object.fromEntries(
+  Object.entries(voiceAssets).map(([path, url]) => [path.split("/").pop().toLowerCase(), url]),
+);
+
+// Keys are matched case-insensitively ("CAPTAIN McMARS" === "CAPTAIN MCMARS").
 const FALLBACK_VOICE = "21m00Tcm4TlvDq8ikWAM"; // ElevenLabs premade voice from their docs
 const VOICES = {
-  "R.O.V.E.R.": import.meta.env.VITE_ELEVENLABS_VOICE_ROVER || FALLBACK_VOICE,
-  "HUGH MANN": import.meta.env.VITE_ELEVENLABS_VOICE_HUGH || FALLBACK_VOICE,
-  "DR OXY GENN": import.meta.env.VITE_ELEVENLABS_VOICE_OXY || FALLBACK_VOICE,
-  "DJ-CMONEY": import.meta.env.VITE_ELEVENLABS_VOICE_DJ || FALLBACK_VOICE,
-  "CAPTAIN MCMARS": import.meta.env.VITE_ELEVENLABS_VOICE_MCMARS || FALLBACK_VOICE,
+  "R.O.V.E.R.": import.meta.env.VITE_ELEVENLABS_VOICE_ROVER,
+  "HUGH MANN": import.meta.env.VITE_ELEVENLABS_VOICE_HUGH,
+  "DR OXY GENN": import.meta.env.VITE_ELEVENLABS_VOICE_OXY,
+  "DJ-CMONEY": import.meta.env.VITE_ELEVENLABS_VOICE_DJ,
+  "CAPTAIN MCMARS": import.meta.env.VITE_ELEVENLABS_VOICE_MCMARS,
 };
+const voiceIdFor = (speaker = "") => VOICES[speaker.toUpperCase()] || FALLBACK_VOICE;
 
 const MUTE_KEY = "project-geaux-home:voice-muted";
 export const isVoiceMuted = () => localStorage.getItem(MUTE_KEY) === "1";
 export const setVoiceMuted = (muted) => localStorage.setItem(MUTE_KEY, muted ? "1" : "0");
 
+// Ignore spacing/quote differences when matching a line to its file.
+const normalize = (text = "") =>
+  text.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"').replace(/\s+/g, " ").trim().toLowerCase();
+const fileByLine = new Map(
+  Object.entries(VOICE_FILES).map(([line, file]) => [normalize(line), file.toLowerCase()]),
+);
+
+// Lines without a file are fine (they use live ElevenLabs or the typewriter).
+// `npm run voice:list` shows which files are still missing.
+
+function preMadeLine(text) {
+  const url = voiceAssetByName[fileByLine.get(normalize(text))];
+  return url ? { audio: new Audio(url), startTimes: [] } : null;
+}
+
 const cache = new Map();
-let voiceDisabled = false; // stop retrying after the proxy says there's no key
+let liveVoiceDisabled = false; // stop retrying after the proxy says there's no key
 
 export async function loadVoiceLine(text, speaker) {
-  if (voiceDisabled || isVoiceMuted() || !text) return null;
-  const voiceId = VOICES[speaker] || FALLBACK_VOICE;
+  if (isVoiceMuted() || !text) return null;
+
+  const file = preMadeLine(text);
+  if (file) return file;
+
+  if (liveVoiceDisabled) return null;
+  const voiceId = voiceIdFor(speaker);
   const key = `${voiceId}|${text}`;
   if (!cache.has(key)) {
     cache.set(
@@ -32,7 +72,7 @@ export async function loadVoiceLine(text, speaker) {
         body: JSON.stringify({ text, voiceId }),
       })
         .then(async (res) => {
-          if (res.status === 503 || res.status === 404) voiceDisabled = true;
+          if (res.status === 503 || res.status === 404) liveVoiceDisabled = true;
           if (!res.ok) throw new Error(`TTS ${res.status}`);
           const data = await res.json();
           const bytes = Uint8Array.from(atob(data.audio_base64), (c) => c.charCodeAt(0));
@@ -41,7 +81,7 @@ export async function loadVoiceLine(text, speaker) {
         })
         .catch((error) => {
           cache.delete(key);
-          console.warn("Voice unavailable, using typewriter:", error.message);
+          console.warn("Live voice unavailable, using typewriter:", error.message);
           return null;
         }),
     );

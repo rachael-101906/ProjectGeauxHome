@@ -1720,3 +1720,13 @@ progress::-moz-progress-bar {
 .inventory-grid--gear { grid-template-columns: 1fr; }
 .inventory-icon { height: 24px; image-rendering: pixelated; width: 24px; }
 .inventory-grid { gap: 8px; } .inventory-grid .inventory-item { margin: 0; padding: 10px 12px; }
+
+/* Location title card: "press any key" hint */
+.location-title-splash__skip {
+  display: block;
+  animation: title-skip-blink 1.2s steps(2, end) infinite;
+  color: var(--game-muted);
+  font-size: 7px;
+  margin-top: 18px;
+}
+@keyframes title-skip-blink { 50% { opacity: 0; } }
