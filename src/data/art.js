@@ -15,9 +15,12 @@ function find(prefix, folder) {
   return findIn(assetFiles, prefix, folder) ?? findIn(legacyFiles, prefix);
 }
 
-export const DRILL_FRAMES = Object.fromEntries([1, 2, 3, 4].map((tier) => [
-  tier, [1, 2, 3].map((frame) => find(`DrillT${tier}_${frame}`, "drills")),
-]));
+// If a frame is missing, reuse another frame of the same tier so the drill never vanishes from Hugh's hand.
+export const DRILL_FRAMES = Object.fromEntries([1, 2, 3, 4].map((tier) => {
+  const frames = [1, 2, 3].map((frame) => find(`DrillT${tier}_${frame}`, "drills"));
+  const fallback = frames.find(Boolean) ?? null;
+  return [tier, frames.map((frame) => frame ?? fallback)];
+}));
 
 // Trader art
 const MARTY_FRAMES = [1, 2, 3].map((frame) => find(`MartyMcMars_${frame}`, "characters"));

@@ -1466,7 +1466,7 @@ progress::-moz-progress-bar {
   left: 45%;
   pointer-events: none;
   position: absolute;
-  top: 42%;
+  top: 24%; /* chest/hand height */
   width: 40px;
 }
 .hugh-mann[data-facing="left"] .hugh-blaster { left: auto; right: 45%; transform: scaleX(-1); }
@@ -1685,3 +1685,25 @@ progress::-moz-progress-bar {
   background: rgba(8, 15, 30, 0.88);
   backdrop-filter: blur(3px);
 }
+/* ---- Dust storm (code-drawn; swap for hand-made art if you like) ---- */
+.wind-storm { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 30; animation: storm-in 1.2s ease-out both; }
+.wind-storm__haze { position: absolute; inset: 0; background: radial-gradient(ellipse at 30% 50%, rgba(214, 120, 60, 0.28), rgba(150, 70, 30, 0.38)); animation: storm-pulse 3.5s ease-in-out infinite; }
+.wind-storm__streak { position: absolute; left: 0; width: 360px; height: 80px; fill: none; stroke: #f3c79a; stroke-width: 2.2; stroke-linecap: round; opacity: 0; transform: translateX(-30vw) scale(var(--streak-scale, 1)); animation: wind-sweep 3s linear infinite; }
+.wind-storm__grit { position: absolute; left: 0; width: 4px; height: 4px; background: #e8b183; opacity: 0.8; animation: grit-fly 1.2s linear infinite; }
+@keyframes wind-sweep {
+  0% { transform: translateX(-30vw) translateY(0) scale(var(--streak-scale, 1)); opacity: 0; }
+  12% { opacity: var(--streak-opacity, 0.5); }
+  50% { transform: translateX(50vw) translateY(-14px) scale(var(--streak-scale, 1)); }
+  88% { opacity: var(--streak-opacity, 0.5); }
+  100% { transform: translateX(115vw) translateY(10px) scale(var(--streak-scale, 1)); opacity: 0; }
+}
+@keyframes grit-fly { from { transform: translateX(-5vw); } to { transform: translateX(105vw) translateY(24px); } }
+@keyframes storm-pulse { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
+@keyframes storm-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---- Boss arena ---- */
+.boss-bar { position: fixed; top: 14px; left: 50%; width: min(520px, 70vw); transform: translateX(-50%); z-index: 25; text-align: center; pointer-events: none; font-family: "Press Start 2P", cursive; font-size: 9px; color: var(--game-cream); }
+.boss-bar__track { margin-top: 6px; height: 14px; background: rgba(7, 16, 24, 0.9); border: 2px solid #ff6b5a; box-shadow: 0 0 12px rgba(255, 107, 90, 0.4); }
+.boss-bar__fill { height: 100%; background: linear-gradient(#ff8a6b, #d63c2a); transition: width 160ms linear; }
+.boss-victory { position: fixed; inset: 0; display: grid; place-items: center; z-index: 28; pointer-events: none; font-family: "Press Start 2P", cursive; color: var(--game-cream); text-align: center; line-height: 2; text-shadow: 0 0 14px rgba(137, 240, 255, 0.6); animation: storm-in 600ms ease-out both; }
+.game-button[aria-disabled="true"] { opacity: 0.55; }
