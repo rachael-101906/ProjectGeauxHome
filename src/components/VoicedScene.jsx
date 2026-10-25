@@ -14,6 +14,7 @@ const SPEAKERS = {
 };
 
 const END_HOLD_S = 0.6; // keep the last line up briefly after the audio ends
+const CAPTION_LEAD_S = 0.05; // show each word a hair early so it never trails the voice
 
 /**
  * Plays one recorded scene (see data/voiceScenes.js) with captions synced to the audio.
@@ -87,12 +88,21 @@ export default function VoicedScene({ scene, interactive = true, endActions, onD
   // Current line = last one that has started.
   let index = 0;
   scene.lines.forEach((line, i) => {
-    if (line.start <= t) index = i;
+    if (line.start <= t + CAPTION_LEAD_S) index = i;
   });
   const line = scene.lines[index];
-  const span = Math.max(0.3, line.end - line.start);
-  const progress = Math.min(1, Math.max(0, (t - line.start) / span));
-  const visible = line.text.slice(0, Math.ceil(line.text.length * progress));
+  const progress = Math.min(1, Math.max(0, (t - line.start) / Math.max(0.3, line.end - line.start)));
+  // Word-by-word reveal: every word that has started is shown; the word being spoken
+  // right now types out across its own duration. Keeps text locked to the voice.
+  const visible = line.words
+    ? line.words
+        .filter(([start]) => start <= t + CAPTION_LEAD_S)
+        .map(([start, end, word]) => {
+          const p = Math.min(1, (t + CAPTION_LEAD_S - start) / Math.max(0.08, end - start));
+          return word.slice(0, Math.max(1, Math.ceil(word.length * p)));
+        })
+        .join(" ")
+    : line.text.slice(0, Math.ceil(line.text.length * progress));
   const finished = t >= scene.duration + END_HOLD_S;
 
   function seek(time) {

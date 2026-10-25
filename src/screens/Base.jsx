@@ -1195,7 +1195,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
       >
         {isCrashSite && showIntroDialogue && !roverIntroComplete && charactersVisible && (
           <div className="speech-bubble speech-bubble--hugh" role="status">
-            Ughh... where am I?
+            Whoa! Where am I?
           </div>
         )}
         <img

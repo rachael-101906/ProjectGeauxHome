@@ -22,7 +22,6 @@ const voiceAssetByName = Object.fromEntries(
 );
 
 // Keys are matched case-insensitively ("CAPTAIN McMARS" === "CAPTAIN MCMARS").
-const FALLBACK_VOICE = "21m00Tcm4TlvDq8ikWAM"; // ElevenLabs premade voice from their docs
 const VOICES = {
   "R.O.V.E.R.": import.meta.env.VITE_ELEVENLABS_VOICE_ROVER,
   "HUGH MANN": import.meta.env.VITE_ELEVENLABS_VOICE_HUGH,
@@ -30,7 +29,9 @@ const VOICES = {
   "DJ-CMONEY": import.meta.env.VITE_ELEVENLABS_VOICE_DJ,
   "CAPTAIN MCMARS": import.meta.env.VITE_ELEVENLABS_VOICE_MCMARS,
 };
-const voiceIdFor = (speaker = "") => VOICES[speaker.toUpperCase()] || FALLBACK_VOICE;
+// Only speakers with their own voice ID get live audio; anyone else stays silent
+// (a generic default voice made characters sound like the wrong person).
+const voiceIdFor = (speaker = "") => VOICES[speaker.toUpperCase()] || null;
 
 const MUTE_KEY = "project-geaux-home:voice-muted";
 export const isVoiceMuted = () => localStorage.getItem(MUTE_KEY) === "1";
@@ -62,6 +63,7 @@ export async function loadVoiceLine(text, speaker) {
 
   if (liveVoiceDisabled) return null;
   const voiceId = voiceIdFor(speaker);
+  if (!voiceId) return null;
   const key = `${voiceId}|${text}`;
   if (!cache.has(key)) {
     cache.set(
