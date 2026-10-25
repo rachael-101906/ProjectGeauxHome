@@ -101,6 +101,11 @@ const TRADER_REACH = { x: 7, y: 9 };
 const MARKET_LOCATION = "vastitas";
 
 const TOOL_KEYS = { 1: "Drill", 2: "Blaster" };
+const HELD_TOOLS = ["Drill", "Blaster"];
+// Old saves can hold "Repair Tool" (the old slot 3), which left Hugh empty-handed.
+const normalizeTool = (tool) => (HELD_TOOLS.includes(tool) ? tool : "Drill");
+// Always a valid tier 1-4, even if a save is missing/garbled.
+const drillTier = (gear) => clamp(Math.round(Number(gear?.drill)) || 1, 1, 4);
 
 const DEFAULT_WALLET = {
   tintinas: 0,
@@ -211,7 +216,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   // ------------------------------------------
 
   const [locationId, setLocationId] = useState(() => getLocation(savedGame.location).id);
-  const [selectedTool, setSelectedTool] = useState(savedGame.selectedTool || "Drill");
+  const [selectedTool, setSelectedTool] = useState(() => normalizeTool(savedGame.selectedTool));
   const [objectivesOpen, setObjectivesOpen] = useState(false);
   const [paused, setPaused] = useState(false);
   const [pauseNotice, setPauseNotice] = useState("");
@@ -313,12 +318,15 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     Boolean(rideStage) ||
     Boolean(traderTalk) ||
     Boolean(tradingWith) ||
+    inventoryOpen ||
     showLocationTitle ||
     !charactersVisible ||
     fadeIn ||
     fadeToBlack;
   const roverIntroRef = useRef(roverIntroComplete);
   roverIntroRef.current = roverIntroComplete;
+  const inventoryOpenRef = useRef(inventoryOpen);
+  inventoryOpenRef.current = inventoryOpen;
   const blockedRef = useRef(movementBlocked);
   blockedRef.current = movementBlocked;
 
@@ -483,7 +491,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
 
     setDrilling(true);
     later(() => setDrilling(false), 280);
-    const remaining = Math.max(0, current - drillDamage(wallet.gear.drill));
+    const remaining = Math.max(0, current - drillDamage(drillTier(wallet.gear)));
     setNodeHealth((h) => ({ ...h, [node.id]: remaining }));
 
     if (remaining === 0) {
@@ -714,6 +722,19 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         }
       }
 
+      if (event.key === "3" && !event.repeat) {
+        // 3 toggles the inventory (also closes it while it's the only thing open).
+        if (inventoryOpenRef.current) {
+          setInventoryOpen(false);
+          return;
+        }
+        if (!blockedRef.current) {
+          held.clear();
+          setInventoryOpen(true);
+          return;
+        }
+      }
+
       if (!blockedRef.current && TOOL_KEYS[event.key]) {
         actionRef.current.setSelectedTool(TOOL_KEYS[event.key]);
         return;
@@ -819,6 +840,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         if (roverOpen) return closeRover();
         if (traderTalk) return closeTrader();
         if (tradingWith) return setTradingWith(null);
+        if (inventoryOpen) return setInventoryOpen(false);
         if (key === "escape" && objectivesOpen && !paused) return setObjectivesOpen(false);
         if (fadeToBlack || fadeIn || rideStage) return;
         setObjectivesOpen(false);
@@ -837,7 +859,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [objectivesOpen, paused, roverOpen, travelTarget, traderTalk, tradingWith, fadeToBlack, fadeIn, rideStage]);
+  }, [objectivesOpen, paused, roverOpen, travelTarget, traderTalk, tradingWith, inventoryOpen, fadeToBlack, fadeIn, rideStage]);
 
   // ------------------------------------------
   // R.O.V.E.R. DIALOGUE
@@ -887,8 +909,9 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   // ------------------------------------------
 
   function selectTool(tool) {
-    setSelectedTool(tool);
-    saveProgress({ selectedTool: tool });
+    const next = normalizeTool(tool);
+    setSelectedTool(next);
+    saveProgress({ selectedTool: next });
   }
 
   // ============================================
@@ -896,9 +919,11 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   // ============================================
 
   const blaster = bestBlaster(wallet.gear.blasters);
+  // Before buying one, Hugh still holds (and fires) a basic T1-looking blaster at 1 damage.
+  const blasterArt = BLASTER_ART[blaster?.id ?? "t1b"];
   const toolIcons = {
-    Drill: DRILL_FRAMES[clamp(wallet.gear.drill, 1, 4)]?.[0],
-    Blaster: blaster ? BLASTER_ART[blaster.id] : BLASTER_ART.t1b,
+    Drill: DRILL_FRAMES[drillTier(wallet.gear)]?.[0],
+    Blaster: blasterArt,
   };
   const talkingTrader = traderTalk && TRADERS.find((t) => t.id === traderTalk.id);
   const traderLine = traderTalk && traderView(traderTalk);
@@ -990,16 +1015,16 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
             aria-hidden="true"
             className="hugh-drill"
             draggable="false"
-            src={DRILL_FRAMES[clamp(wallet.gear.drill, 1, 4)]?.[drillFrame]}
+            src={DRILL_FRAMES[drillTier(wallet.gear)]?.[drillFrame]}
           />
         )}
-        {selectedTool === "Blaster" && blaster && (
+        {selectedTool === "Blaster" && blasterArt && (
           <img
             alt=""
             aria-hidden="true"
             className="hugh-blaster"
             draggable="false"
-            src={BLASTER_ART[blaster.id]}
+            src={blasterArt}
           />
         )}
       </div>
@@ -1126,7 +1151,8 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
           {inventoryOpen && (
             <InventoryPanel
               inventory={wallet.inventory}
-              gear={wallet.gear}
+              gear={{ ...wallet.gear, drill: drillTier(wallet.gear) }}
+              tintinas={wallet.tintinas}
               onClose={() => setInventoryOpen(false)}
             />
           )}

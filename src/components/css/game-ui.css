@@ -1707,3 +1707,15 @@ progress::-moz-progress-bar {
 .boss-bar__fill { height: 100%; background: linear-gradient(#ff8a6b, #d63c2a); transition: width 160ms linear; }
 .boss-victory { position: fixed; inset: 0; display: grid; place-items: center; z-index: 28; pointer-events: none; font-family: "Press Start 2P", cursive; color: var(--game-cream); text-align: center; line-height: 2; text-shadow: 0 0 14px rgba(137, 240, 255, 0.6); animation: storm-in 600ms ease-out both; }
 .game-button[aria-disabled="true"] { opacity: 0.55; }
+
+/* Inventory: icons + layout tweaks */
+.inventory-panel h2 { margin: 6px 0 14px; }
+.inventory-panel h3 { color: var(--game-cyan); font-size: 9px; margin: 16px 0 4px; }
+.inventory-item { align-items: center; font-size: 8px; }
+.inventory-item > span { align-items: center; display: flex; gap: 8px; }
+.inventory-item strong { color: var(--game-cream); font-size: 8px; text-align: right; }
+.inventory-item--money strong { color: #f2c14e; font-size: 12px; }
+.inventory-item--dim { opacity: 0.5; }
+.inventory-grid--gear { grid-template-columns: 1fr; }
+.inventory-icon { height: 24px; image-rendering: pixelated; width: 24px; }
+.inventory-grid { gap: 8px; } .inventory-grid .inventory-item { margin: 0; padding: 10px 12px; }
