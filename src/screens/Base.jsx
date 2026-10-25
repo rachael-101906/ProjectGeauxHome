@@ -68,6 +68,7 @@ const ROVER_REACH = { x: 12, y: 10 };
 const ORE_NODES = {
   arcadia: [
     { id: "ar1", ore: "ice", x: 46, y: 74 },
+    { id: "ar3", ore: "ice", x: 57, y: 86 },
     { id: "ar2", ore: "iron", x: 68, y: 78 },
   ],
   albaMons: [
@@ -85,7 +86,12 @@ const ORE_NODES = {
     { id: "o2", ore: "sulfur", x: 48, y: 70 },
     { id: "o3", ore: "basalt", x: 72, y: 82 },
   ],
-  vastitas: [],
+  // Kept below/beside the trader stalls so [E] doesn't clash with trading.
+  vastitas: [
+    { id: "v1", ore: "ice", x: 14, y: 82 },
+    { id: "v2", ore: "ice", x: 52, y: 88 },
+    { id: "v3", ore: "ice", x: 84, y: 82 },
+  ],
   caldera: [], // boss arena: no ore, just Alpha Zeno
 };
 const ORE_REACH = { x: 8, y: 10 };
