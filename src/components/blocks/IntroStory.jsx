@@ -1,10 +1,10 @@
 import { useEffect } from "react";
-import { playMusic } from "../../systems/music.js";
+import { MUSIC_LEVELS, playMusic } from "../../systems/music.js";
 import "../css/game-ui.css";
 
 export default function IntroStory({ onBeginMission }) {
-  // Intro music starts with the briefing and keeps playing into the game until Hugh wakes up.
-  useEffect(() => { playMusic("intro"); }, []);
+  // Menu music carries on through the briefing at full menu volume.
+  useEffect(() => { playMusic("intro", { volume: MUSIC_LEVELS.menu }); }, []);
 
   return (
     <main className="game-ui-screen intro-story">

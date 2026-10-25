@@ -6,6 +6,7 @@ import {
   loadVoiceLine,
   setVoiceMuted,
 } from '../systems/voice.js'
+import { duckMusic } from '../systems/music.js'
 
 // Typewriter dialogue box.
 //
@@ -37,6 +38,9 @@ export default function RoverDialogue({
   const isHugh = speaker === 'HUGH MANN'
   const isRover =
     speaker === 'R.O.V.E.R.' || (!portrait && !portraitText)
+
+  // Lower the background music while the dialogue box is open.
+  useEffect(() => duckMusic(), [])
 
   // Type out dialogue, synchronized to audio when timing data is available.
   useEffect(() => {

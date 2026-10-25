@@ -20,7 +20,6 @@ import albaMons from "../components/assets/backgrounds/alba-mons.png";
 import tempeTerra from "../components/assets/backgrounds/tempe-terra.png";
 import vastitasBorealis from "../components/assets/backgrounds/vastitas-borealis.png";
 import olympusMons from "../components/assets/backgrounds/olympus-basalt.png";
-import finalBossMusic from "../components/audio/final_boss.mp3";
 import olympusBoss from "../components/assets/backgrounds/olympus-boss.png";
 
 import { startRandomEvents } from "../systems/events.js";
@@ -33,7 +32,7 @@ import {
   weatherEffects,
   weatherLabel,
 } from "../systems/marsWeather.js";
-import { isMusicMuted, playMusic, setMusicMuted, stopMusic, stopMusicIf } from "../systems/music.js";
+import { isMusicMuted, MUSIC_LEVELS, playMusic, setMusicMuted } from "../systems/music.js";
 import oreTypes from "../data/ores.js";
 import shop from "../data/shop.js";
 import upgrades from "../data/upgrades.js";
@@ -276,7 +275,6 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const [spaceWeather, setSpaceWeather] = useState(null);
   const [bossDefeated, setBossDefeated] = useState(Boolean(savedGame.bossDefeated));
   const [showVictory, setShowVictory] = useState(false);
-  const bossMusicRef = useRef(null);
 
   // Recorded voice scenes (data/voiceScenes.js). `scene` = what's playing now.
   const [scene, setScene] = useState(null); // { id, interactive, endActions, onDone }
@@ -304,32 +302,6 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   // Ride: null -> "jump" (Hugh hops on) -> "ride" (both drive off) -> fade -> new map.
   const [rideStage, setRideStage] = useState(null);
 
-  useEffect(() => {
-    const shouldPlayBossMusic =
-      locationId === "caldera" && charactersVisible && !bossDefeated;
-
-    if (!shouldPlayBossMusic) {
-      bossMusicRef.current?.pause();
-      bossMusicRef.current = null;
-      return undefined;
-    }
-
-    const music = new Audio(finalBossMusic);
-    music.loop = true;
-    music.volume = 0.5;
-    bossMusicRef.current = music;
-    music.play().catch(() => {
-      // Playback can be blocked until the player interacts with the page.
-    });
-
-    return () => {
-      music.pause();
-      music.currentTime = 0;
-      if (bossMusicRef.current === music) {
-        bossMusicRef.current = null;
-      }
-    };
-  }, [bossDefeated, charactersVisible, locationId]);
 
   // ------------------------------------------
   // REFS
@@ -473,22 +445,14 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   // MUSIC
   // ------------------------------------------
 
-  // Intro music plays through the briefing and the opening fade, and stops when Hugh wakes up
-  // (the moment he appears on the crash site and says "Ughh... where am I?").
+  // The menu music keeps playing under gameplay, quieter. In the Olympus Caldera it's
+  // swapped for the boss track, and comes back once Alpha Zeno is down (or Hugh leaves).
+  // No stop on unmount: the main menu picks the same track back up at menu volume.
+  const bossFight = locationId === "caldera" && !bossDefeated;
   useEffect(() => {
-    if (!savedGame.roverIntroComplete) playMusic("intro");
-    return () => stopMusic();
-  }, []);
-
-  useEffect(() => {
-    if (charactersVisible) stopMusicIf("intro");
-  }, [charactersVisible]);
-
-  // Final boss music: only in the Olympus Caldera, and it fades out once Alpha Zeno is down.
-  useEffect(() => {
-    if (locationId === "caldera" && !bossDefeated) playMusic("boss");
-    else stopMusicIf("boss");
-  }, [locationId, bossDefeated]);
+    if (bossFight) playMusic("boss", { volume: MUSIC_LEVELS.boss });
+    else playMusic("intro", { volume: MUSIC_LEVELS.gameplay });
+  }, [bossFight]);
 
   // Each location gets a brief title card before Hugh and the NPCs appear.
   useEffect(() => {
