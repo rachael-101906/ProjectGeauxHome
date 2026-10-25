@@ -1,13 +1,40 @@
 // src/screens/MainMenu.jsx
 
 import React from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import homeBackground from "../components/assets/backgrounds/home-page.png";
 import logo from "../components/assets/logos/home_main_logo.png";
+import introMusic from "../components/audio/intro.mp3";
 
 export default function MainMenu({ onStartGame }) {
   const [panel, setPanel] = useState(null);
+  const musicRef = useRef(null);
+
+  useEffect(() => {
+    const music = new Audio(introMusic);
+    music.loop = true;
+    music.volume = 0.45;
+    musicRef.current = music;
+
+    const startMusic = () => {
+      music.play().catch(() => {
+        // Browsers may require a user gesture before allowing audio playback.
+      });
+    };
+
+    startMusic();
+    window.addEventListener("pointerdown", startMusic, { once: true });
+    window.addEventListener("keydown", startMusic, { once: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", startMusic);
+      window.removeEventListener("keydown", startMusic);
+      music.pause();
+      music.currentTime = 0;
+      musicRef.current = null;
+    };
+  }, []);
 
   return (
     <div

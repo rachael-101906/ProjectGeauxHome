@@ -96,7 +96,7 @@ const locations = [
     ],
     npcs: [
       { id: "dr-oxy", name: "Dr Oxy Genn", x: 1480, y: 760 },
-      { id: "dj-tmoney", name: "DJ-CMoney", x: 910, y: 1110 },
+      { id: "dj-cmoney", name: "DJ-CMoney", x: 910, y: 1110 },
       { id: "rover", name: "R.O.V.E.R.", x: 1300, y: 900 },
     ],
     interactables: [],
