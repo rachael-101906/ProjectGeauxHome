@@ -45,7 +45,7 @@ export const TRADERS = [
   },
   {
     id: "robot",
-    name: "DJ-TMONEY",
+    name: "DJ-CMONEY",
     role: "ROBOT GEAR DEALER",
     background: robotMarket,
     frames: [CLAW_BIT],

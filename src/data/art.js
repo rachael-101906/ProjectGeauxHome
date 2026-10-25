@@ -26,8 +26,7 @@ export const DRILL_FRAMES = Object.fromEntries([1, 2, 3, 4].map((tier) => {
 const MARTY_FRAMES = [1, 2, 3].map((frame) => find(`MartyMcMars_${frame}`, "characters"));
 // Kept as an alias in case an older component still imports OXY_FRAMES.
 export const OXY_FRAMES = MARTY_FRAMES;
-// The source asset is currently spelled "CaptianMcMarsHuman.png" (sic).
-export const CAPTAIN_HUMAN = find("CaptianMcMarsHuman", "characters");
+export const CAPTAIN_HUMAN = find("CaptainMcMarsHuman", "characters");
 export const CLAW_BIT = find("DJ_CLAW_MONEY", "characters");
 export const T_BIT = find("T-Bit", "icons");
 

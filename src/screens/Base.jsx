@@ -138,7 +138,7 @@ const locations = [
   { id: "albaMons", name: "ALBA MONS", asset: albaMons },
   { id: "tempeTerra", name: "TEMPE TERRA", asset: tempeTerra },
   { id: "vastitas", name: "VASTITAS BOREALIS", asset: vastitasBorealis },
-  // Mobs live here, and the sulfur air means Hugh needs DJ-TMoney's Filter to enter.
+  // Mobs live here, and the sulfur air means Hugh needs DJ-CMoney's Filter to enter.
   { id: "olympus", name: "OLYMPUS MONS", asset: olympusMons, needsFilter: true },
   // Final boss arena: Alpha Zeno. Needs the Filter AND a blaster.
   { id: "caldera", name: "OLYMPUS CALDERA", asset: olympusBoss, needsFilter: true, needsBlaster: true },
@@ -485,7 +485,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     if (selectedTool !== "Drill") return flashNotice("EQUIP THE DRILL [1]");
     const type = oreTypes[node.ore];
     if (type.needsFilter && !wallet.gear.hasFilter)
-      return flashNotice("NEED A SULFUR FILTER (DJ-TMONEY)");
+      return flashNotice("NEED A SULFUR FILTER (DJ-CMONEY)");
     const current = nodeHealth[node.id] ?? type.health;
     if (current <= 0) return flashNotice("DEPOSIT DEPLETED");
 
@@ -879,7 +879,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
             label: `${destination.name}${travelLock(destination, wallet) ? ` (NEED ${travelLock(destination, wallet).toUpperCase()})` : ""}`,
             onClick: () =>
               travelLock(destination, wallet)
-                ? (closeRover(), flashNotice(`BUY A ${travelLock(destination, wallet).toUpperCase()} FROM DJ-TMONEY FIRST`))
+                ? (closeRover(), flashNotice(`BUY A ${travelLock(destination, wallet).toUpperCase()} FROM DJ-CMONEY FIRST`))
                 : rideRover(destination),
           })),
         { label: "NOT NOW", onClick: closeRover },
@@ -1273,9 +1273,9 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
             <h2 id="travel-prompt-title">TRAVEL TO {travelTarget.name}?</h2>
             <p>
               {travelLock_ === "filter"
-                ? "The sulfur air will choke you. Buy a FILTER from DJ-TMoney at the Vastitas market first."
+                ? "The sulfur air will choke you. Buy a FILTER from DJ-CMoney at the Vastitas market first."
                 : travelLock_ === "blaster"
-                  ? "Alpha Zeno waits in the caldera. Buy a BLASTER from DJ-TMoney before you go."
+                  ? "Alpha Zeno waits in the caldera. Buy a BLASTER from DJ-CMoney before you go."
                   : travelTarget.id === "caldera"
                     ? "Final boss ahead: Alpha Zeno. Dodge its lunge, keep firing with SPACE or click. You regenerate health when out of combat."
                 : travelTarget.needsFilter

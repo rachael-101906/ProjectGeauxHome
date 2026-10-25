@@ -1,4 +1,4 @@
-// DJ-TMoney's gear inventory. The Sulfur Filter is a permanent unlock purchased once.
+// DJ-CMoney's gear inventory. The Sulfur Filter is a permanent unlock purchased once.
 const shop = [
   { id: "t1d", name: "T1D DRILL", type: "drill", tier: 1, oreDamage: 5, description: "Starter drill. Free to use.", cost: 0 },
   { id: "t2d", name: "T2D DRILL", type: "drill", tier: 2, oreDamage: 10, description: "Breaks tougher deposits faster.", cost: 20 },
