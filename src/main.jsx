@@ -7,7 +7,12 @@ import SaveSelect from "./screens/SaveSelect.jsx";
 import Base from "./screens/Base.jsx";
 import IntroStory from "./components/blocks/IntroStory.jsx";
 import PixelTransition from "./components/PixelTransition.jsx";
-import { createSaveSlot, readSaveSlots, updateSaveSlot } from "./state/save.js";
+import {
+  createSaveSlot,
+  readSaveSlots,
+  resetSaveSlots,
+  updateSaveSlot,
+} from "./state/save.js";
 
 const transitionDuration = 500;
 
@@ -17,6 +22,7 @@ function App() {
   const [activeSlot, setActiveSlot] = useState(null);
   const [saveState, setSaveState] = useState(() => {
     try {
+      resetSaveSlots();
       return { slots: readSaveSlots(), error: "" };
     } catch (error) {
       return {

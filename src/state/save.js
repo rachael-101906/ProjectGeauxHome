@@ -63,6 +63,10 @@ export function readSaveSlots() {
   });
 }
 
+export function resetSaveSlots() {
+  return writeSaveSlots(Array(slotCount).fill(null));
+}
+
 function writeSaveSlots(saves) {
   window.localStorage.setItem(storageKey, JSON.stringify(saves));
   return saves;
