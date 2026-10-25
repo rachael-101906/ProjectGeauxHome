@@ -5,6 +5,7 @@ import ObjectivesMenu from "../components/ObjectivesMenu.jsx";
 import PauseMenu from "../components/PauseMenu.jsx";
 import RoverDialogue from "../components/RoverDialogue.jsx";
 import OlympusCombat from "../components/OlympusCombat.jsx";
+import WindStorm from "../components/WindStorm.jsx";
 import TradingPost, { ORE_ICONS, TRADERS } from "./TradingPost.jsx";
 
 import hughRight from "../components/assets/characters/Hugh.png";
@@ -19,7 +20,9 @@ import albaMons from "../components/assets/backgrounds/alba-mons.png";
 import tempeTerra from "../components/assets/backgrounds/tempe-terra.png";
 import vastitasBorealis from "../components/assets/backgrounds/vastitas-borealis.png";
 import olympusMons from "../components/assets/backgrounds/olympus-basalt.png";
+import olympusBoss from "../components/assets/backgrounds/olympus-boss.png";
 
+import { startRandomEvents } from "../systems/events.js";
 import oreTypes from "../data/ores.js";
 import shop from "../data/shop.js";
 import upgrades from "../data/upgrades.js";
@@ -83,6 +86,7 @@ const ORE_NODES = {
     { id: "o3", ore: "basalt", x: 72, y: 82 },
   ],
   vastitas: [],
+  caldera: [], // boss arena: no ore, just Alpha Zeno
 };
 const ORE_REACH = { x: 8, y: 10 };
 const ORE_RESPAWN_MS = 10000;
@@ -97,6 +101,11 @@ const TRADER_REACH = { x: 7, y: 9 };
 const MARKET_LOCATION = "vastitas";
 
 const TOOL_KEYS = { 1: "Drill", 2: "Blaster" };
+const HELD_TOOLS = ["Drill", "Blaster"];
+// Old saves can hold "Repair Tool" (the old slot 3), which left Hugh empty-handed.
+const normalizeTool = (tool) => (HELD_TOOLS.includes(tool) ? tool : "Drill");
+// Always a valid tier 1-4, even if a save is missing/garbled.
+const drillTier = (gear) => clamp(Math.round(Number(gear?.drill)) || 1, 1, 4);
 
 const DEFAULT_WALLET = {
   tintinas: 0,
@@ -131,13 +140,27 @@ const locations = [
   { id: "vastitas", name: "VASTITAS BOREALIS", asset: vastitasBorealis },
   // Mobs live here, and the sulfur air means Hugh needs DJ-CMoney's Filter to enter.
   { id: "olympus", name: "OLYMPUS MONS", asset: olympusMons, needsFilter: true },
+  // Final boss arena: Alpha Zeno. Needs the Filter AND a blaster.
+  { id: "caldera", name: "OLYMPUS CALDERA", asset: olympusBoss, needsFilter: true, needsBlaster: true },
 ];
 
 const LOCATION_SUBTITLES = {
   arcadia: "CRASH SITE // SECTOR 01",
   vastitas: "FRONTIER MARKET // SECTOR 04",
   olympus: "DANGER // ZENOS DETECTED",
+  caldera: "FINAL BOSS // ALPHA ZENO",
 };
+
+// Health regenerates once Hugh has been out of combat for a few seconds.
+const REGEN_DELAY_MS = 5000;
+const REGEN_PER_SECOND = 3;
+
+// Why a destination is closed to Hugh right now (null = open).
+function travelLock(destination, wallet) {
+  if (destination?.needsFilter && !wallet.gear.hasFilter) return "filter";
+  if (destination?.needsBlaster && !wallet.gear.blasters?.length) return "blaster";
+  return null;
+}
 
 // ============================================
 // HELPERS
@@ -193,7 +216,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   // ------------------------------------------
 
   const [locationId, setLocationId] = useState(() => getLocation(savedGame.location).id);
-  const [selectedTool, setSelectedTool] = useState(savedGame.selectedTool || "Drill");
+  const [selectedTool, setSelectedTool] = useState(() => normalizeTool(savedGame.selectedTool));
   const [objectivesOpen, setObjectivesOpen] = useState(false);
   const [paused, setPaused] = useState(false);
   const [pauseNotice, setPauseNotice] = useState("");
@@ -223,6 +246,9 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const [drillFrame, setDrillFrame] = useState(0);
   const [health, setHealth] = useState(100);
   const [hurtFlash, setHurtFlash] = useState(0);
+  const [storm, setStorm] = useState(null);
+  const [bossDefeated, setBossDefeated] = useState(Boolean(savedGame.bossDefeated));
+  const [showVictory, setShowVictory] = useState(false);
 
   // Proximity prompts
   const [nearRover, setNearRover] = useState(false);
@@ -256,6 +282,9 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const nearTraderRef = useRef(null);
   const timersRef = useRef([]);
   const healthRef = useRef(100);
+  const lastHurtRef = useRef(0);
+  const speedMultRef = useRef(1);
+  const stormTriggerRef = useRef(null);
 
   // ------------------------------------------
   // DERIVED STATE
@@ -268,7 +297,8 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const isCrashSite = locationId === "arcadia";
   const isMarket = locationId === MARKET_LOCATION;
   const oreNodes = ORE_NODES[locationId] || [];
-  const travelLocked = Boolean(travelTarget?.needsFilter && !wallet.gear.hasFilter);
+  const travelLock_ = travelLock(travelTarget, wallet);
+  const travelLocked = Boolean(travelLock_);
   const nextUpgrade = upgrades.find((up) => !wallet.upgrades[up.id]);
   const currentObjective = !roverIntroComplete
     ? "Find out where you are. Talk to R.O.V.E.R."
@@ -288,10 +318,15 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     Boolean(rideStage) ||
     Boolean(traderTalk) ||
     Boolean(tradingWith) ||
+    inventoryOpen ||
     showLocationTitle ||
     !charactersVisible ||
     fadeIn ||
     fadeToBlack;
+  const roverIntroRef = useRef(roverIntroComplete);
+  roverIntroRef.current = roverIntroComplete;
+  const inventoryOpenRef = useRef(inventoryOpen);
+  inventoryOpenRef.current = inventoryOpen;
   const blockedRef = useRef(movementBlocked);
   blockedRef.current = movementBlocked;
 
@@ -319,6 +354,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     wallet,
     roverIntroComplete,
     metTraders,
+    bossDefeated,
   };
 
   const saveProgress = useCallback(
@@ -455,7 +491,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
 
     setDrilling(true);
     later(() => setDrilling(false), 280);
-    const remaining = Math.max(0, current - drillDamage(wallet.gear.drill));
+    const remaining = Math.max(0, current - drillDamage(drillTier(wallet.gear)));
     setNodeHealth((h) => ({ ...h, [node.id]: remaining }));
 
     if (remaining === 0) {
@@ -478,7 +514,8 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   // ------------------------------------------
 
   function hurtHugh(damage) {
-    setHurtFlash(Date.now());
+    lastHurtRef.current = Date.now();
+    setHurtFlash((n) => n + 1);
     healthRef.current = Math.max(0, healthRef.current - damage);
     if (healthRef.current === 0) {
       // Blacked out: R.O.V.E.R. drags Hugh back to the crash site.
@@ -487,6 +524,47 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
       changeLocation(getLocation("arcadia"));
     }
     setHealth(healthRef.current);
+  }
+
+  // Regenerating health: +REGEN_PER_SECOND each second while out of combat.
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      if (blockedRef.current || healthRef.current >= 100) return;
+      if (Date.now() - lastHurtRef.current < REGEN_DELAY_MS) return;
+      healthRef.current = Math.min(100, healthRef.current + REGEN_PER_SECOND);
+      setHealth(healthRef.current);
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  // Random world events (dust storms), driven by an async loop in systems/events.js.
+  useEffect(() => {
+    const events = startRandomEvents({
+      canTrigger: () => !blockedRef.current && roverIntroRef.current,
+      onStart: (event) => {
+        speedMultRef.current = event.speedMultiplier;
+        setStorm(event);
+        flashNotice(event.warning);
+      },
+      onEnd: (event) => {
+        speedMultRef.current = 1;
+        setStorm(null);
+        flashNotice(event.clear);
+      },
+    });
+    stormTriggerRef.current = events.trigger;
+    if (import.meta.env.DEV) window.__triggerEvent = events.trigger;
+    return () => {
+      events.stop();
+      speedMultRef.current = 1;
+    };
+  }, []);
+
+  function defeatBoss() {
+    setBossDefeated(true);
+    setShowVictory(true);
+    saveProgress({ bossDefeated: true });
+    later(() => setShowVictory(false), 5000);
   }
 
   const walletRef = useRef(wallet);
@@ -644,6 +722,19 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         }
       }
 
+      if (event.key === "3" && !event.repeat) {
+        // 3 toggles the inventory (also closes it while it's the only thing open).
+        if (inventoryOpenRef.current) {
+          setInventoryOpen(false);
+          return;
+        }
+        if (!blockedRef.current) {
+          held.clear();
+          setInventoryOpen(true);
+          return;
+        }
+      }
+
       if (!blockedRef.current && TOOL_KEYS[event.key]) {
         actionRef.current.setSelectedTool(TOOL_KEYS[event.key]);
         return;
@@ -685,8 +776,8 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
       if (moving) {
         const length = Math.hypot(dx, dy); // keep diagonals the same speed
         const position = positionRef.current;
-        position.x = clamp(position.x + (dx / length) * MOVE_SPEED_X * dt, MOVE_LIMITS.minX, MOVE_LIMITS.maxX);
-        position.y = clamp(position.y + (dy / length) * MOVE_SPEED_Y * dt, MOVE_LIMITS.minY, MOVE_LIMITS.maxY);
+        position.x = clamp(position.x + (dx / length) * MOVE_SPEED_X * speedMultRef.current * dt, MOVE_LIMITS.minX, MOVE_LIMITS.maxX);
+        position.y = clamp(position.y + (dy / length) * MOVE_SPEED_Y * speedMultRef.current * dt, MOVE_LIMITS.minY, MOVE_LIMITS.maxY);
         const element = hughRef.current;
         if (element) {
           element.style.left = `${position.x}%`;
@@ -749,6 +840,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         if (roverOpen) return closeRover();
         if (traderTalk) return closeTrader();
         if (tradingWith) return setTradingWith(null);
+        if (inventoryOpen) return setInventoryOpen(false);
         if (key === "escape" && objectivesOpen && !paused) return setObjectivesOpen(false);
         if (fadeToBlack || fadeIn || rideStage) return;
         setObjectivesOpen(false);
@@ -767,7 +859,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [objectivesOpen, paused, roverOpen, travelTarget, traderTalk, tradingWith, fadeToBlack, fadeIn, rideStage]);
+  }, [objectivesOpen, paused, roverOpen, travelTarget, traderTalk, tradingWith, inventoryOpen, fadeToBlack, fadeIn, rideStage]);
 
   // ------------------------------------------
   // R.O.V.E.R. DIALOGUE
@@ -784,10 +876,10 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         ...locations
           .filter((location) => location.id !== locationId)
           .map((destination) => ({
-            label: `${destination.name}${destination.needsFilter && !wallet.gear.hasFilter ? " (NEED FILTER)" : ""}`,
+            label: `${destination.name}${travelLock(destination, wallet) ? ` (NEED ${travelLock(destination, wallet).toUpperCase()})` : ""}`,
             onClick: () =>
-              destination.needsFilter && !wallet.gear.hasFilter
-                ? (closeRover(), flashNotice("BUY A FILTER FROM DJ-CMONEY FIRST"))
+              travelLock(destination, wallet)
+                ? (closeRover(), flashNotice(`BUY A ${travelLock(destination, wallet).toUpperCase()} FROM DJ-CMONEY FIRST`))
                 : rideRover(destination),
           })),
         { label: "NOT NOW", onClick: closeRover },
@@ -817,8 +909,9 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   // ------------------------------------------
 
   function selectTool(tool) {
-    setSelectedTool(tool);
-    saveProgress({ selectedTool: tool });
+    const next = normalizeTool(tool);
+    setSelectedTool(next);
+    saveProgress({ selectedTool: next });
   }
 
   // ============================================
@@ -826,9 +919,11 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   // ============================================
 
   const blaster = bestBlaster(wallet.gear.blasters);
+  // Before buying one, Hugh still holds (and fires) a basic T1-looking blaster at 1 damage.
+  const blasterArt = BLASTER_ART[blaster?.id ?? "t1b"];
   const toolIcons = {
-    Drill: DRILL_FRAMES[clamp(wallet.gear.drill, 1, 4)]?.[0],
-    Blaster: blaster ? BLASTER_ART[blaster.id] : BLASTER_ART.t1b,
+    Drill: DRILL_FRAMES[drillTier(wallet.gear)]?.[0],
+    Blaster: blasterArt,
   };
   const talkingTrader = traderTalk && TRADERS.find((t) => t.id === traderTalk.id);
   const traderLine = traderTalk && traderView(traderTalk);
@@ -920,22 +1015,25 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
             aria-hidden="true"
             className="hugh-drill"
             draggable="false"
-            src={DRILL_FRAMES[clamp(wallet.gear.drill, 1, 4)]?.[drillFrame]}
+            src={DRILL_FRAMES[drillTier(wallet.gear)]?.[drillFrame]}
           />
         )}
-        {selectedTool === "Blaster" && blaster && (
+        {selectedTool === "Blaster" && blasterArt && (
           <img
             alt=""
             aria-hidden="true"
             className="hugh-blaster"
             draggable="false"
-            src={BLASTER_ART[blaster.id]}
+            src={blasterArt}
           />
         )}
       </div>
 
-      {locationId === "olympus" && charactersVisible && (
+      {(locationId === "olympus" || locationId === "caldera") && charactersVisible && (
         <OlympusCombat
+          boss={locationId === "caldera"}
+          bossCleared={bossDefeated}
+          onBossDefeated={defeatBoss}
           armed={selectedTool === "Blaster"}
           blasterDamage={blasterDamage(wallet.gear.blasters)}
           hughPosition={positionRef}
@@ -944,6 +1042,12 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
           onKill={rewardKill}
           paused={movementBlocked}
         />
+      )}
+      {storm && <WindStorm />}
+      {showVictory && (
+        <div className="boss-victory" role="status">
+          <div>ALPHA ZENO DEFEATED!<br />MARS IS YOURS, HUGH MANN.<br />NOW GEAUX HOME!</div>
+        </div>
       )}
       {hurtFlash > 0 && <div className="hurt-flash" key={hurtFlash} aria-hidden="true" />}
 
@@ -1047,7 +1151,8 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
           {inventoryOpen && (
             <InventoryPanel
               inventory={wallet.inventory}
-              gear={wallet.gear}
+              gear={{ ...wallet.gear, drill: drillTier(wallet.gear) }}
+              tintinas={wallet.tintinas}
               onClose={() => setInventoryOpen(false)}
             />
           )}
@@ -1167,8 +1272,12 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
             <p className="game-eyebrow">EDGE OF SECTOR</p>
             <h2 id="travel-prompt-title">TRAVEL TO {travelTarget.name}?</h2>
             <p>
-              {travelLocked
+              {travelLock_ === "filter"
                 ? "The sulfur air will choke you. Buy a FILTER from DJ-CMoney at the Vastitas market first."
+                : travelLock_ === "blaster"
+                  ? "Alpha Zeno waits in the caldera. Buy a BLASTER from DJ-CMoney before you go."
+                  : travelTarget.id === "caldera"
+                    ? "Final boss ahead: Alpha Zeno. Dodge its lunge, keep firing with SPACE or click. You regenerate health when out of combat."
                 : travelTarget.needsFilter
                   ? "Filter equipped. Zenos roam here: equip the BLASTER [2] and fire with SPACE or click."
                   : "The route ahead will move you away from the crash site."}
@@ -1180,7 +1289,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
                 onClick={confirmTravel}
                 type="button"
               >
-                {travelLocked ? "NEED FILTER" : "TRAVEL"}
+                {travelLocked ? `NEED ${travelLock_.toUpperCase()}` : "TRAVEL"}
               </button>
               <button className="game-button" onClick={() => setTravelTarget(null)} type="button">
                 STAY HERE

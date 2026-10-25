@@ -13,7 +13,7 @@ const rover_travel_line = "Beep boop. I can take you anywhere. Choose a destinat
 const TRADER_LINES = {
   martian: "Ooh, shiny rocks! Dr Oxy Genn pays top Tintinas. Mostly top. Sometimes.",
   human: "Captain McMars here. I handle ship systems, repairs, and getting you home in one piece.",
-  robot: "Yo, yo, yo. DJ-TMoney in the dome! Need gear or that sulfur filter? I got you.",
+  robot: "Yo, yo, yo. DJ-CMoney in the dome! Need gear or that sulfur filter? I got you.",
 };
 
 // Full conversations for the traders at Vastitas Borealis.
@@ -32,7 +32,7 @@ const TRADER_DIALOGUE = {
     topics: [
       {
         label: "WHAT ARE TINTINAS?",
-        reply: "The finest currency on Mars! Little gold T-Bits. Spend them with DJ-TMoney on drills, blasters and that sulfur filter you'll be needing.",
+        reply: "The finest currency on Mars! Little gold T-Bits. Spend them with DJ-CMoney on drills, blasters and that sulfur filter you'll be needing.",
       },
       {
         label: "WHERE DO I FIND ORE?",
@@ -67,9 +67,9 @@ const TRADER_DIALOGUE = {
     farewell: "Bring the materials and we will get you home.",
   },
   robot: {
-    speaker: "DJ-TMONEY",
+    speaker: "DJ-CMONEY",
     intro: [
-      "Yo, yo, yo! DJ-TMoney in the dome! Only bot on Mars still spinnin' vinyl and slingin' gear.",
+      "Yo, yo, yo! DJ-CMoney in the dome! Only bot on Mars still spinnin' vinyl and slingin' gear.",
       "Drills, blasters, and the Sulfur Filter. You bring the Tintinas, I bring the heat. Cash only, space cowboy.",
     ],
     repeat: "My favorite customer is back! What we copping today?",

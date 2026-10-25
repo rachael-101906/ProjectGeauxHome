@@ -10,8 +10,12 @@ const MOB_TUNING = {
   aZeno: { speed: 13, reward: 15, size: 72, weight: 0.3 },
   alphaZeno: { speed: 6, reward: 150, size: 140 },
 };
-// The Alpha Zeno boss shows up once per visit after this many kills.
-const KILLS_BEFORE_ALPHA = 8;
+// Boss arena: Alpha Zeno lunges every few seconds and calls in B-Zeno minions.
+const BOSS_LUNGE_EVERY_MS = 5000;
+const BOSS_LUNGE_MS = 800;
+const BOSS_LUNGE_SPEED_X = 3.2;
+const BOSS_MINION_EVERY_MS = 7000;
+const BOSS_MAX_MINIONS = 2;
 const ALPHA_FRAME_MS = 300;
 const MAX_MOBS = 4;
 const SPAWN_EVERY_MS = 2800;
@@ -44,6 +48,8 @@ function spawnMob(forcedType) {
  *  - hughPosition: ref to { x, y } (percent), hughRef: Hugh's DOM node (for facing)
  *  - blasterDamage: damage per shot; armed: Blaster is the selected tool
  *  - onHurt(damage), onKill(reward, mobName)
+ *  - boss: arena mode. Only Alpha Zeno (plus a few minions) spawn; onBossDefeated() fires once.
+ *    bossCleared: the boss was already beaten, so the arena stays quiet.
  */
 export default function OlympusCombat({
   hughPosition,
@@ -53,11 +59,14 @@ export default function OlympusCombat({
   paused,
   onHurt,
   onKill,
+  boss = false,
+  bossCleared = false,
+  onBossDefeated,
 }) {
   const world = useRef({ mobs: [], shots: [], lastSpawn: 0, kills: 0, alphaSpawned: false });
   const [, setFrame] = useState(0);
   const props = useRef({});
-  props.current = { armed, blasterDamage, paused, onHurt, onKill };
+  props.current = { armed, blasterDamage, paused, onHurt, onKill, boss, bossCleared, onBossDefeated };
 
   // Shooting: Space fires the way Hugh faces; clicking fires at the cursor.
   useEffect(() => {
@@ -105,10 +114,25 @@ export default function OlympusCombat({
       const p = props.current;
 
       if (!p.paused) {
-        if (!w.alphaSpawned && w.kills >= KILLS_BEFORE_ALPHA) {
-          w.alphaSpawned = true;
-          w.mobs.push(spawnMob("alphaZeno"));
-          w.lastSpawn = now;
+        if (p.boss) {
+          if (!w.alphaSpawned && !p.bossCleared) {
+            w.alphaSpawned = true;
+            const alpha = spawnMob("alphaZeno");
+            alpha.x = 50;
+            alpha.y = BOUNDS.minY + 6;
+            alpha.nextLunge = now + BOSS_LUNGE_EVERY_MS;
+            alpha.lastHit = now + 2500 - HIT_COOLDOWN_MS; // grace period so Hugh can line up a shot
+            w.mobs.push(alpha);
+            w.lastSpawn = now;
+          } else if (
+            w.alphaSpawned &&
+            w.mobs.some((m) => m.type === "alphaZeno") &&
+            w.mobs.filter((m) => m.type !== "alphaZeno").length < BOSS_MAX_MINIONS &&
+            now - w.lastSpawn > BOSS_MINION_EVERY_MS
+          ) {
+            w.mobs.push(spawnMob("bZeno"));
+            w.lastSpawn = now;
+          }
         } else if (w.mobs.length < MAX_MOBS && now - w.lastSpawn > SPAWN_EVERY_MS) {
           w.mobs.push(spawnMob());
           w.lastSpawn = now;
@@ -119,7 +143,14 @@ export default function OlympusCombat({
           const dx = hugh.x - mob.x;
           const dy = hugh.y - mob.y;
           const dist = Math.hypot(dx, dy) || 1;
-          const speed = MOB_TUNING[mob.type].speed;
+          let speed = MOB_TUNING[mob.type].speed;
+          if (mob.type === "alphaZeno") {
+            if (now > mob.nextLunge) {
+              mob.lungeUntil = now + BOSS_LUNGE_MS;
+              mob.nextLunge = now + BOSS_LUNGE_EVERY_MS;
+            }
+            if (now < (mob.lungeUntil ?? 0)) speed *= BOSS_LUNGE_SPEED_X;
+          }
           if (Math.abs(dx) > TOUCH_RANGE.x / 2 || Math.abs(dy) > TOUCH_RANGE.y / 2) {
             mob.x += (dx / dist) * speed * dt;
             mob.y += (dy / dist) * speed * dt;
@@ -155,6 +186,7 @@ export default function OlympusCombat({
             if (target.hp <= 0) {
               w.kills += 1;
               p.onKill(MOB_TUNING[target.type].reward, mobs[target.type].name);
+              if (target.type === "alphaZeno") p.onBossDefeated?.();
             }
           }
         }
@@ -171,8 +203,17 @@ export default function OlympusCombat({
 
   const { mobs: liveMobs, shots } = world.current;
   const alphaFrame = ALPHA_FRAMES[Math.floor(performance.now() / ALPHA_FRAME_MS) % ALPHA_FRAMES.length];
+  const alpha = liveMobs.find((mob) => mob.type === "alphaZeno");
   return (
     <>
+      {boss && alpha && (
+        <div className="boss-bar" role="progressbar" aria-label="Alpha Zeno health" aria-valuenow={Math.max(0, Math.round(alpha.hp))} aria-valuemax={mobs.alphaZeno.health}>
+          ALPHA ZENO
+          <div className="boss-bar__track">
+            <div className="boss-bar__fill" style={{ width: `${Math.max(0, (alpha.hp / mobs.alphaZeno.health) * 100)}%` }} />
+          </div>
+        </div>
+      )}
       {liveMobs.map((mob) => (
         <div
           aria-label={mobs[mob.type].name}
