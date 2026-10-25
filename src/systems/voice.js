@@ -7,9 +7,9 @@ const FALLBACK_VOICE = "21m00Tcm4TlvDq8ikWAM"; // ElevenLabs premade voice from 
 const VOICES = {
   "R.O.V.E.R.": import.meta.env.VITE_ELEVENLABS_VOICE_ROVER || FALLBACK_VOICE,
   "HUGH MANN": import.meta.env.VITE_ELEVENLABS_VOICE_HUGH || FALLBACK_VOICE,
-  "MARTY McMARS": import.meta.env.VITE_ELEVENLABS_VOICE_MARTY || FALLBACK_VOICE,
+  "DR OXY GENN": import.meta.env.VITE_ELEVENLABS_VOICE_OXY || FALLBACK_VOICE,
   "DJ-TMONEY": import.meta.env.VITE_ELEVENLABS_VOICE_DJ || FALLBACK_VOICE,
-  "DR. OXY GENN": import.meta.env.VITE_ELEVENLABS_VOICE_OXY || FALLBACK_VOICE,
+  "CAPTAIN MCMARS": import.meta.env.VITE_ELEVENLABS_VOICE_MCMARS || FALLBACK_VOICE,
 };
 
 const MUTE_KEY = "project-geaux-home:voice-muted";

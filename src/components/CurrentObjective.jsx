@@ -1,4 +1,4 @@
-import "./game-ui.css";
+import "./css/game-ui.css";
 
 export default function CurrentObjective({
   objective,

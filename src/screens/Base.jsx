@@ -30,6 +30,8 @@ import {
   TRADER_DIALOGUE,
   user_dialogue,
 } from "../data/dialogue.js";
+import InventoryPanel from "../components/InventoryPanel.jsx";
+
 
 // ============================================
 // GAME CONFIGURATION
@@ -59,13 +61,17 @@ const ROVER_REACH = { x: 12, y: 10 };
 
 // Ore deposits per map (percent of the screen).
 // Follows data/ores.js: ice @ Vastitas, iron/silica @ Alba Mons + Tempe Terra,
-// sulfur/basalt @ Olympus Mons (mobs + Filter required).
+// sulfur/basalt @ Olympus Mons (mobs + Sulfur Filter required).
 const ORE_NODES = {
-  arcadia: [],
+  arcadia: [
+    { id: "ar1", ore: "ice", x: 46, y: 74 },
+    { id: "ar2", ore: "iron", x: 68, y: 78 },
+  ],
   albaMons: [
     { id: "a1", ore: "iron", x: 35, y: 70 },
     { id: "a2", ore: "iron", x: 62, y: 82 },
     { id: "a3", ore: "silica", x: 75, y: 64 },
+    { id: "a4", ore: "silica", x: 50, y: 70 },
   ],
   tempeTerra: [
     { id: "t1", ore: "iron", x: 30, y: 78 },
@@ -76,11 +82,7 @@ const ORE_NODES = {
     { id: "o2", ore: "sulfur", x: 48, y: 70 },
     { id: "o3", ore: "basalt", x: 72, y: 82 },
   ],
-  vastitas: [
-    { id: "v1", ore: "ice", x: 16, y: 86 },
-    { id: "v2", ore: "ice", x: 60, y: 88 },
-    { id: "v3", ore: "ice", x: 84, y: 80 },
-  ],
+  vastitas: [],
 };
 const ORE_REACH = { x: 8, y: 10 };
 const ORE_RESPAWN_MS = 10000;
@@ -94,7 +96,7 @@ const TRADER_SPOTS = {
 const TRADER_REACH = { x: 7, y: 9 };
 const MARKET_LOCATION = "vastitas";
 
-const TOOL_KEYS = { 1: "Drill", 2: "Blaster", 3: "Repair Tool" };
+const TOOL_KEYS = { 1: "Drill", 2: "Blaster" };
 
 const DEFAULT_WALLET = {
   tintinas: 0,
@@ -196,6 +198,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const [paused, setPaused] = useState(false);
   const [pauseNotice, setPauseNotice] = useState("");
   const [travelTarget, setTravelTarget] = useState(null);
+  const [inventoryOpen, setInventoryOpen] = useState(false);
 
   // R.O.V.E.R. dialogue
   const [roverOpen, setRoverOpen] = useState(false);
@@ -270,8 +273,8 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const currentObjective = !roverIntroComplete
     ? "Find out where you are. Talk to R.O.V.E.R."
     : nextUpgrade
-      ? `Repair the ship: install the ${nextUpgrade.name} (Dr. Oxy Genn, Vastitas Borealis).`
-      : "All systems online. Time to geaux home!";
+      ? `Repair the ship: install the ${nextUpgrade.name} (Captain McMars, Vastitas Borealis).`
+      : "All systems online. Time to geaux home! Get back to the ship to put all of the missing part";
   const objectiveList = upgrades.map((up) => ({
     name: up.name,
     progress: wallet.upgrades[up.id] ? 100 : 0,
@@ -1031,13 +1034,24 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
       )}
 
       {charactersVisible && (
-        <HUD
-          health={health}
-          currentObjective={currentObjective}
-          onSelectTool={selectTool}
-          selectedTool={selectedTool}
-          toolIcons={toolIcons}
-        />
+        <>
+          <HUD
+            health={health}
+            currentObjective={currentObjective}
+            selectedTool={selectedTool}
+            onSelectTool={selectTool}
+            onOpenInventory={() => setInventoryOpen(true)}
+            toolIcons={toolIcons}
+          />
+
+          {inventoryOpen && (
+            <InventoryPanel
+              inventory={wallet.inventory}
+              gear={wallet.gear}
+              onClose={() => setInventoryOpen(false)}
+            />
+          )}
+        </>
       )}
 
       {/* R.O.V.E.R. DIALOGUE */}
@@ -1179,7 +1193,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   );
 }
 
-// A trader standing at their stall. Marty animates through his 3 frames.
+// A trader standing at their stall. Oxy animates through his 3 frames.
 function TraderNpc({ trader, spot, near, onClick }) {
   const [frame, setFrame] = useState(0);
   const frames = trader.frames?.filter(Boolean) ?? [];

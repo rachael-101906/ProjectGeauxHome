@@ -34,7 +34,7 @@ export default function Inventory() {
             <Crosshair size={16} /> {gear.blaster ? `T${gear.blaster} Blaster` : 'No blaster'}
           </li>
           <li className="flex items-center gap-2">
-            <Wind size={16} /> {gear.hasFilter ? 'Filter installed' : 'No filter'}
+            <Wind size={16} /> {gear.hasFilter ? 'Sulfur Filter installed' : 'No Sulfur Filter'}
           </li>
         </ul>
       </div>

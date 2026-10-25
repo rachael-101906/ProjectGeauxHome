@@ -11,9 +11,9 @@ const rover_travel_line = "Beep boop. I can take you anywhere. Choose a destinat
 
 // Short one-liners (used by the trading post header + the legacy TradeScreen).
 const TRADER_LINES = {
-  martian: "Ooh, shiny rocks! Marty pays top Tintinas. Mostly top. Sometimes.",
-  human: "Yo, yo, yo. It's DJ-TMoney. Lookin' for some dope gear? I gots you covered.",
-  robot: "Bring me raw materials and I will make your ship fly. Probably.",
+  martian: "Ooh, shiny rocks! Dr Oxy Genn pays top Tintinas. Mostly top. Sometimes.",
+  human: "Captain McMars here. I handle ship systems, repairs, and getting you home in one piece.",
+  robot: "Yo, yo, yo. DJ-TMoney in the dome! Need gear or that sulfur filter? I got you.",
 };
 
 // Full conversations for the traders at Vastitas Borealis.
@@ -23,12 +23,12 @@ const TRADER_LINES = {
 // farewell: said when Hugh leaves.
 const TRADER_DIALOGUE = {
   martian: {
-    speaker: "MARTY McMARS",
+    speaker: "DR OXY GENN",
     intro: [
-      "Halt, Earthling! Marty McMars, Grand Wizard of Vastitas and licensed rock appraiser. Mostly licensed.",
-      "You dig up ore, I give you Tintinas. Ice, iron, silica, sulfur, basalt... the rarer the rock, the shinier the coin.",
+      "Halt, Earthling!  Dr Oxy Genn, Grand Master of Vastitas and licensed rock appraiser. Mostly licensed, just don't ask where I get them from.",
+      "You dig up ore, I give you Tintinas. Ice, iron, silica, sulfur, basalt... the rarer the rock, the shinier the coin. And Dr Oxy Genn loves coins.",
     ],
-    repeat: "Back again, Earthling? Marty smells ore in those pockets. Let's deal.",
+    repeat: "Back again, Earthling? Dr Oxy Genn smells ore in those pockets. Let's deal.",
     topics: [
       {
         label: "WHAT ARE TINTINAS?",
@@ -40,55 +40,51 @@ const TRADER_DIALOGUE = {
       },
       {
         label: "ARE YOU A REAL WIZARD?",
-        reply: "Watch closely. *waves staff* ...There. I have made your doubt disappear. Marty accepts tips.",
+        reply: "Watch closely. *waves staff* ...There. I have made your doubt disappear. Dr Oxy Genn accepts tips.",
       },
     ],
-    prompt: "Anything else, Earthling? Marty's time is valuable. Marty's time costs 2 Tintinas a minute.",
-    farewell: "Bring Marty more rocks! Big ones! Shiny ones!",
+    prompt: "Anything else, Earthling? Dr Oxy Genn's time is valuable. Dr Oxy Genn's time costs 2 Tintinas a minute.",
+    farewell: "Bring Dr Oxy Genn more rocks! Big ones! Shiny ones!",
   },
   human: {
+    speaker: "CAPTAIN McMARS",
+    intro: [
+      "Captain McMars reporting. I specialize in ship systems and upgrades.",
+      "Bring the required raw materials, and we can restore the Comm Array, Life Support, Fusion Power, and Propulsion in sequence.",
+    ],
+    repeat: "Back again? Let us get those ship systems online.",
+    topics: [
+      {
+        label: "WHAT DOES EACH SYSTEM DO?",
+        reply: "The Comm Array lets Earth hear you. Life Support keeps you breathing. Fusion Power supplies energy. Propulsion gets you off Mars. Restore all four to go home.",
+      },
+      {
+        label: "WHY THAT INSTALLATION ORDER?",
+        reply: "Ship systems depend on one another. Restore them in order: Comm Array, Life Support, Fusion Power, then Propulsion.",
+      },
+    ],
+    prompt: "Any other ship questions, pilot?",
+    farewell: "Bring the materials and we will get you home.",
+  },
+  robot: {
     speaker: "DJ-TMONEY",
     intro: [
-      "Yo, yo, yo! DJ-TMoney in the dome! Only human on Mars still spinnin' vinyl and slingin' gear.",
-      "Drills, blasters, filters. You bring the Tintinas, I bring the heat. Cash only, space cowboy.",
+      "Yo, yo, yo! DJ-TMoney in the dome! Only bot on Mars still spinnin' vinyl and slingin' gear.",
+      "Drills, blasters, and the Sulfur Filter. You bring the Tintinas, I bring the heat. Cash only, space cowboy.",
     ],
     repeat: "My favorite customer is back! What we copping today?",
     topics: [
       {
         label: "WHY DO I NEED A FILTER?",
-        reply: "Olympus Mons air is straight sulfur, my guy. One whiff and you're down for the count. Grab my Filter and you can breathe easy up there.",
+        reply: "Olympus Mons air is full of sulfur. Buy my Sulfur Filter before heading up there. Once purchased, it permanently unlocks the route and protects you while mining.",
       },
       {
         label: "WHICH BLASTER SHOULD I GET?",
-        reply: "T1 gets you started, T2 hits harder, T3 melts Zenos like butter on a hot rock. Equip it with [2], fire with SPACE or click. Simple.",
-      },
-      {
-        label: "WHY BETTER DRILLS?",
-        reply: "Higher-tier drills chew through rock faster. Basalt laughs at a T1. A T4? Basalt stops laughing.",
+        reply: "T1 is a start, T2 hits harder, and T3 is the Zeno melter. Equip with [2], then fire with SPACE or click.",
       },
     ],
     prompt: "What else you need to know? Ask away, I got all day. Literally. Mars days are long.",
     farewell: "Stay fresh out there. Peace!",
-  },
-  robot: {
-    speaker: "DR. OXY GENN",
-    intro: [
-      "Greetings, organic. I am Dr. Oxy Genn, ship systems specialist. Your vessel is... how do you say... toast.",
-      "Bring me raw ore and I will rebuild it in order: Comm Array, Life Support, Fusion Power, then the Propulsion Engine. Then you go home.",
-    ],
-    repeat: "Welcome back, organic. Your ship remains toast. Shall we make it less toast?",
-    topics: [
-      {
-        label: "WHAT DOES EACH SYSTEM DO?",
-        reply: "Comm Array lets Earth hear you. Life Support keeps you breathing. Fusion Power gives the ship energy. Propulsion gets you off this rock. All four, and you can geaux home.",
-      },
-      {
-        label: "WHY THAT ORDER?",
-        reply: "Each system draws power from the last. Install Propulsion before Fusion and you will achieve a very short, very loud flight.",
-      },
-    ],
-    prompt: "Further queries, organic?",
-    farewell: "Return with materials. I will be here. I am always here.",
   },
 };
 

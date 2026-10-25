@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { BLASTER_ART, CAPTAIN_HUMAN, DRILL_FRAMES, MARTY_FRAMES, T_BIT, UPGRADE_ART } from "../data/art.js";
+ import { useEffect, useState } from "react";
+import { BLASTER_ART, CAPTAIN_HUMAN, CLAW_BIT, DRILL_FRAMES, OXY_FRAMES, T_BIT, UPGRADE_ART } from "../data/art.js";
 import { TRADER_LINES } from "../data/dialogue.js";
-import "../components/game-ui.css";
+import "../components/css/game-ui.css";
 
 import sellOres from "../data/sellOres.js";
 import shop from "../data/shop.js";
@@ -12,6 +12,10 @@ import ironIcon from "../components/assets/ores/Iron.png";
 import silicaIcon from "../components/assets/ores/Silica.png";
 import sulfurIcon from "../components/assets/ores/Sulfur.png";
 import basaltIcon from "../components/assets/ores/Basalt.png";
+
+import martianMarket from "../components/assets/icons/martianMarket.png";
+import captainMarket from "../components/assets/icons/captainMarket.png";
+import robotMarket from "../components/assets/icons/robotMarket.png";
 
 export const ORE_ICONS = {
   ice: iceIcon,
@@ -25,23 +29,26 @@ export const ORE_ICONS = {
 export const TRADERS = [
   {
     id: "martian",
-    name: "MARTY McMARS",
+    name: "DR OXY GENN",
     role: "ORE BUYER",
-    frames: MARTY_FRAMES,
+    background: martianMarket, 
+    frames: OXY_FRAMES,
     greeting: TRADER_LINES.martian,
   },
   {
     id: "human",
-    name: "DJ-TMONEY",
-    role: "GEAR DEALER",
+    name: "CAPTAIN McMARS",
+    role: "SHIP SYSTEMS",
+    background: captainMarket,
     frames: [CAPTAIN_HUMAN],
     greeting: TRADER_LINES.human,
   },
   {
     id: "robot",
-    name: "DR. OXY GENN",
-    role: "SHIP UPGRADES",
-    portrait: "🤖", // TODO: no robot trader art yet
+    name: "DJ-TMONEY",
+    role: "ROBOT GEAR DEALER",
+    background: robotMarket,
+    frames: [CLAW_BIT],
     greeting: TRADER_LINES.robot,
   },
 ];
@@ -101,7 +108,7 @@ export default function TradingPost({ wallet, onChange, onLeave, initialTraderId
 
   function gearStatus(item) {
     if (item.type === "drill" && gear.drill >= item.tier) return "OWNED";
-    if (item.type === "filter" && gear.hasFilter) return "OWNED";
+    if (item.type === "filter" && gear.hasFilter) return "INSTALLED";
     if (item.type === "blaster" && gear.blasters?.includes(item.id)) return "OWNED";
     if (item.type === "drill" && item.tier !== gear.drill + 1) return "LOCKED";
     if (tintinas < item.cost) return "NEED T";
@@ -116,7 +123,7 @@ export default function TradingPost({ wallet, onChange, onLeave, initialTraderId
     if (item.type === "blaster") nextGear.blasters = [...(gear.blasters || []), item.id];
     commit(
       { ...wallet, tintinas: tintinas - item.cost, gear: nextGear },
-      `BOUGHT ${item.name} FOR ${item.cost} T`,
+      item.type === "filter" ? "SULFUR FILTER INSTALLED — OLYMPUS MONS UNLOCKED" : `BOUGHT ${item.name} FOR ${item.cost} T`,
     );
   }
 
@@ -138,8 +145,16 @@ export default function TradingPost({ wallet, onChange, onLeave, initialTraderId
   }
 
   return (
-    <section className="trading-post" role="dialog" aria-modal="true" aria-label="Trading post">
-      <div className="game-panel trading-post__panel">
+    <section
+      className={`trading-post trading-post--${traderId}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${trader.name} trading post`}
+      style={{
+        "--trading-post-background": `url("${trader.background}")`,
+      }}
+    >
+    <div className="game-panel trading-post__panel">
         <header className="trading-post__header">
           <div>
             <p className="game-eyebrow">VASTITAS BOREALIS // FRONTIER MARKET</p>
@@ -191,7 +206,7 @@ export default function TradingPost({ wallet, onChange, onLeave, initialTraderId
               </li>
             ))}
 
-          {traderId === "human" &&
+          {traderId === "robot" &&
             shop.map((item) => {
               const status = gearStatus(item);
               return (
@@ -211,7 +226,7 @@ export default function TradingPost({ wallet, onChange, onLeave, initialTraderId
               );
             })}
 
-          {traderId === "robot" &&
+          {traderId === "human" &&
             upgrades.map((up) => (
               <li key={up.id}>
                 <span className="trading-post__item">

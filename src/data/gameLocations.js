@@ -53,7 +53,7 @@ const locations = [
       { id: "silica-1", resource: "Silica", x: 1770, y: 1050 },
     ],
     npcs: [
-      { id: "marty", name: "Marty McMars", x: 1480, y: 760 },
+      { id: "dr-oxy", name: "Dr Oxy Genn", x: 1480, y: 760 },
       { id: "rover", name: "R.O.V.E.R.", x: 1300, y: 900 },
     ],
     interactables: [],
@@ -95,7 +95,7 @@ const locations = [
       { id: "sulfur-1", resource: "Sulfur", x: 1730, y: 1080 },
     ],
     npcs: [
-      { id: "marty", name: "Marty McMars", x: 1480, y: 760 },
+      { id: "dr-oxy", name: "Dr Oxy Genn", x: 1480, y: 760 },
       { id: "dj-tmoney", name: "DJ-TMoney", x: 910, y: 1110 },
       { id: "rover", name: "R.O.V.E.R.", x: 1300, y: 900 },
     ],
