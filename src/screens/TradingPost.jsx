@@ -38,7 +38,7 @@ export const TRADERS = [
   {
     id: "human",
     name: "CAPTAIN McMARS",
-    role: "SHIP SYSTEMS",
+    role: "GEAR DEALER",
     background: captainMarket,
     frames: [CAPTAIN_HUMAN],
     greeting: TRADER_LINES.human,
@@ -46,7 +46,7 @@ export const TRADERS = [
   {
     id: "robot",
     name: "DJ-CMONEY",
-    role: "ROBOT GEAR DEALER",
+    role: "SHIP SYSTEMS",
     background: robotMarket,
     frames: [CLAW_BIT],
     greeting: TRADER_LINES.robot,
@@ -81,7 +81,16 @@ function gearIcon(item) {
   return null;
 }
 
-export default function TradingPost({ wallet, onChange, onLeave, initialTraderId = "martian" }) {
+// onEvent({ type: "buy" | "sell" | "install" | "propulsionPaid" | "collectEngine", ... })
+// lets Base play the matching recorded voice scene.
+export default function TradingPost({
+  wallet,
+  onChange,
+  onLeave,
+  onEvent,
+  bossDefeated = false,
+  initialTraderId = "martian",
+}) {
   const [traderId, setTraderId] = useState(initialTraderId);
   const [notice, setNotice] = useState("");
   const trader = TRADERS.find((t) => t.id === traderId);
@@ -104,6 +113,7 @@ export default function TradingPost({ wallet, onChange, onLeave, initialTraderId
       },
       `SOLD ${n} ${oreId.toUpperCase()} FOR ${earned} T`,
     );
+    onEvent?.({ type: "sell", ore: oreId });
   }
 
   function gearStatus(item) {
@@ -125,6 +135,7 @@ export default function TradingPost({ wallet, onChange, onLeave, initialTraderId
       { ...wallet, tintinas: tintinas - item.cost, gear: nextGear },
       item.type === "filter" ? "SULFUR FILTER INSTALLED — OLYMPUS MONS UNLOCKED" : `BOUGHT ${item.name} FOR ${item.cost} T`,
     );
+    onEvent?.({ type: "buy", id: item.id });
   }
 
   function canAfford(cost) {
@@ -134,14 +145,39 @@ export default function TradingPost({ wallet, onChange, onLeave, initialTraderId
   // Systems must be installed in order (Comm -> Life -> Fusion -> Propulsion).
   const prereqsMet = (up) => (up.requires || []).every((id) => installed[id]);
 
+  // The Propulsion Engine is a two-step deal with DJ-C: pay now, collect after Alpha Zeno.
+  const propulsionPaid = Boolean(wallet.propulsionPaid);
+
+  function upgradeStatus(up) {
+    if (installed[up.id]) return { label: "INSTALLED", disabled: true };
+    if (!prereqsMet(up)) return { label: "LOCKED", disabled: true };
+    if (up.id === "propulsion" && propulsionPaid) {
+      return bossDefeated
+        ? { label: "COLLECT ENGINE", disabled: false }
+        : { label: "DEFEAT ALPHA ZENO", disabled: true };
+    }
+    if (!canAfford(up.cost)) return { label: "INSTALL", disabled: true };
+    return { label: up.id === "propulsion" ? "PAY DJ-C" : "INSTALL", disabled: false };
+  }
+
   function install(up) {
-    if (installed[up.id] || !prereqsMet(up) || !canAfford(up.cost)) return;
+    if (up.id === "propulsion" && propulsionPaid) {
+      if (bossDefeated) onEvent?.({ type: "collectEngine" });
+      return;
+    }
+    if (upgradeStatus(up).disabled) return;
     const nextInv = { ...inventory };
     for (const [id, n] of Object.entries(up.cost)) nextInv[id] -= n;
+    if (up.id === "propulsion") {
+      commit({ ...wallet, inventory: nextInv, propulsionPaid: true }, "DJ-C HAS YOUR MATERIALS. NOW GO BEAT ALPHA ZENO.");
+      onEvent?.({ type: "propulsionPaid" });
+      return;
+    }
     commit(
       { ...wallet, inventory: nextInv, upgrades: { ...installed, [up.id]: 1 } },
       `${up.name.toUpperCase()} INSTALLED!`,
     );
+    onEvent?.({ type: "install", id: up.id });
   }
 
   return (
@@ -206,7 +242,7 @@ export default function TradingPost({ wallet, onChange, onLeave, initialTraderId
               </li>
             ))}
 
-          {traderId === "robot" &&
+          {traderId === "human" &&
             shop.map((item) => {
               const status = gearStatus(item);
               return (
@@ -226,7 +262,7 @@ export default function TradingPost({ wallet, onChange, onLeave, initialTraderId
               );
             })}
 
-          {traderId === "human" &&
+          {traderId === "robot" &&
             upgrades.map((up) => (
               <li key={up.id}>
                 <span className="trading-post__item">
@@ -236,11 +272,11 @@ export default function TradingPost({ wallet, onChange, onLeave, initialTraderId
                 </span>
                 <button
                   className="game-button"
-                  disabled={Boolean(installed[up.id]) || !prereqsMet(up) || !canAfford(up.cost)}
+                  disabled={upgradeStatus(up).disabled}
                   onClick={() => install(up)}
                   type="button"
                 >
-                  {installed[up.id] ? "INSTALLED" : !prereqsMet(up) ? "LOCKED" : "INSTALL"}
+                  {upgradeStatus(up).label}
                 </button>
               </li>
             ))}

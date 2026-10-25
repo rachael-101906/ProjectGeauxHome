@@ -34,6 +34,8 @@ import {
   user_dialogue,
 } from "../data/dialogue.js";
 import InventoryPanel from "../components/InventoryPanel.jsx";
+import VoicedScene from "../components/VoicedScene.jsx";
+import SCENES from "../data/voiceScenes.js";
 
 
 // ============================================
@@ -139,7 +141,7 @@ const locations = [
   { id: "albaMons", name: "ALBA MONS", asset: albaMons },
   { id: "tempeTerra", name: "TEMPE TERRA", asset: tempeTerra },
   { id: "vastitas", name: "VASTITAS BOREALIS", asset: vastitasBorealis },
-  // Mobs live here, and the sulfur air means Hugh needs DJ-CMoney's Filter to enter.
+  // Mobs live here, and the sulfur air means Hugh needs Captain McMars's Filter to enter.
   { id: "olympus", name: "OLYMPUS MONS", asset: olympusMons, needsFilter: true },
   // Final boss arena: Alpha Zeno. Needs the Filter AND a blaster.
   { id: "caldera", name: "OLYMPUS CALDERA", asset: olympusBoss, needsFilter: true, needsBlaster: true },
@@ -251,6 +253,17 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const [bossDefeated, setBossDefeated] = useState(Boolean(savedGame.bossDefeated));
   const [showVictory, setShowVictory] = useState(false);
 
+  // Recorded voice scenes (data/voiceScenes.js). `scene` = what's playing now.
+  const [scene, setScene] = useState(null); // { id, interactive, endActions, onDone }
+  const [playedScenes, setPlayedScenes] = useState(() =>
+    Array.isArray(savedGame.playedScenes) ? savedGame.playedScenes : [],
+  );
+  const [roverEnding, setRoverEnding] = useState(false); // R.O.V.E.R. is offering the ending choice
+  const [ending, setEnding] = useState(savedGame.ending ?? null); // "A" (took R.O.V.E.R.) | "B" (left him)
+  const [showEnding, setShowEnding] = useState(false);
+  const playedScenesRef = useRef(playedScenes);
+  const soldThisVisitRef = useRef(new Set());
+
   // Proximity prompts
   const [nearRover, setNearRover] = useState(false);
   const [nearNodeId, setNearNodeId] = useState(null);
@@ -304,8 +317,14 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const currentObjective = !roverIntroComplete
     ? "Find out where you are. Talk to R.O.V.E.R."
     : nextUpgrade
-      ? `Repair the ship: install the ${nextUpgrade.name} (Captain McMars, Vastitas Borealis).`
-      : "All systems online. Time to geaux home! Get back to the ship to put all of the missing part";
+      ? nextUpgrade.id === "propulsion" && wallet.propulsionPaid
+        ? bossDefeated
+          ? "You beat Alpha Zeno! Go back to DJ-C Money at Vastitas Borealis for your engine."
+          : "DJ-C Money has your materials. Defeat Alpha Zeno in the Olympus Caldera."
+        : `Repair the ship: get the ${nextUpgrade.name} from DJ-C Money (Vastitas Borealis).`
+      : ending
+        ? "Mission complete. Thanks for playing!"
+        : "Your ship is ready! Head back to R.O.V.E.R. at the crash site.";
   const objectiveList = upgrades.map((up) => ({
     name: up.name,
     progress: wallet.upgrades[up.id] ? 100 : 0,
@@ -320,6 +339,8 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     Boolean(traderTalk) ||
     Boolean(tradingWith) ||
     inventoryOpen ||
+    Boolean(scene?.interactive) ||
+    showEnding ||
     showLocationTitle ||
     !charactersVisible ||
     fadeIn ||
@@ -356,6 +377,8 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     roverIntroComplete,
     metTraders,
     bossDefeated,
+    playedScenes,
+    ending,
   };
 
   const saveProgress = useCallback(
@@ -371,6 +394,10 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   );
 
   function updateWallet(next) {
+    // Update the refs right away so any save/scene fired in the same tick sees the new wallet
+    // (otherwise a second save could overwrite this one with the old wallet).
+    saveStateRef.current = { ...saveStateRef.current, wallet: next };
+    walletRef.current = next;
     setWallet(next);
     saveProgress({ wallet: next });
   }
@@ -502,7 +529,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     if (selectedTool !== "Drill") return flashNotice("EQUIP THE DRILL [1]");
     const type = oreTypes[node.ore];
     if (type.needsFilter && !wallet.gear.hasFilter)
-      return flashNotice("NEED A SULFUR FILTER (DJ-CMONEY)");
+      return flashNotice("NEED A SULFUR FILTER (CAPTAIN McMARS)");
     const current = nodeHealth[node.id] ?? type.health;
     if (current <= 0) return flashNotice("DEPOSIT DEPLETED");
 
@@ -625,8 +652,6 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
       setRideStage(null);
       changeLocation(destination);
       saveProgress({ location: destination.id, roverIntroComplete: true });
-      if (destination.id === MARKET_LOCATION)
-        later(() => flashNotice("WALK UP TO A TRADER AND PRESS [E]"), LOCATION_TITLE_DURATION + 100);
       setFadeToBlack(false);
     }, 2600 + FADE_DURATION);
   }
@@ -643,12 +668,158 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     }, FADE_DURATION);
   }
 
+
+  // ------------------------------------------
+  // VOICED SCENES (recorded audio + synced captions)
+  // ------------------------------------------
+
+  // interactive = story scene (blocks movement, E = next line, Esc = skip).
+  // Non-interactive = short trade bark that plays over the trading post.
+  function playScene(id, { interactive = true, endActions, onDone } = {}) {
+    if (!SCENES[id]) {
+      onDone?.();
+      return;
+    }
+    heldKeys.current.clear();
+    setScene({ id, key: Date.now(), interactive, endActions, onDone });
+    if (!playedScenesRef.current.includes(id)) {
+      const next = [...playedScenesRef.current, id];
+      playedScenesRef.current = next;
+      setPlayedScenes(next);
+      saveProgress({ playedScenes: next });
+    }
+  }
+
+  function endScene(current) {
+    setScene((active) => (active === current ? null : active));
+    current.onDone?.();
+  }
+
+  const allInstalled = upgrades.every((up) => wallet.upgrades[up.id]);
+  const engineReady = Boolean(wallet.propulsionPaid && bossDefeated && !wallet.upgrades.propulsion);
+
+  function openRover() {
+    setShowIntroDialogue(false);
+    heldKeys.current.clear();
+    if (!roverIntroComplete && !playedScenes.includes("roverMeet")) {
+      // First meeting is the fully voiced scene; it ends on the HOP ON choice.
+      playScene("roverMeet", {
+        endActions: [
+          { label: "HOP ON R.O.V.E.R.", onClick: () => { setScene(null); rideRover(getLocation(MARKET_LOCATION)); } },
+          { label: "NOT YET", onClick: () => setScene(null) },
+        ],
+      });
+      return;
+    }
+    if (!roverIntroComplete) {
+      // Already heard the intro: jump straight to "let's go?".
+      setRoverLine(ROVER_LAST_LINE);
+      setRoverOpen(true);
+      return;
+    }
+    if (allInstalled && !ending) {
+      setRoverEnding(true);
+      setRoverOpen(true);
+      return;
+    }
+    setRoverOpen(true);
+  }
+
+  function finishGame(choice) {
+    setEnding(choice);
+    setShowEnding(true);
+    saveProgress({ ending: choice });
+  }
+
+  function chooseEnding(choice) {
+    closeRover();
+    if (choice === "A") {
+      playScene("endingTakeRover", { onDone: () => finishGame("A") });
+    } else {
+      playScene("endingLeaveRover", {
+        onDone: () => playScene("endingRoverFinal", { onDone: () => finishGame("B") }),
+      });
+    }
+  }
+
+  // DJ-C keeps his word: after Alpha Zeno, he hands over the Propulsion Engine.
+  function collectEngine() {
+    setTradingWith(null);
+    setTraderTalk(null);
+    playScene("djReunion", {
+      onDone: () => {
+        const w = walletRef.current;
+        updateWallet({ ...w, upgrades: { ...w.upgrades, propulsion: 1 } });
+        flashNotice("PROPULSION ENGINE INSTALLED! RETURN TO R.O.V.E.R.");
+      },
+    });
+  }
+
+  // Called by the trading post after a buy / sell / install.
+  function onTradeEvent(event) {
+    if (event.type === "buy") {
+      playScene(`buy_${event.id}`, { interactive: false });
+    } else if (event.type === "sell") {
+      // Doc only says his line once per ore per visit, so SELL 1 spam stays quiet.
+      if (soldThisVisitRef.current.has(event.ore)) return;
+      soldThisVisitRef.current.add(event.ore);
+      playScene(`sell_${event.ore}`, { interactive: false });
+    } else if (event.type === "install") {
+      playScene(`install_${event.id}`, { interactive: false });
+    } else if (event.type === "propulsionPaid") {
+      if (bossDefeated) collectEngine();
+      else playScene("finalTrade");
+    } else if (event.type === "collectEngine") {
+      collectEngine();
+    }
+  }
+
+  // Each trading-post visit starts fresh for Doc's lines.
+  useEffect(() => {
+    if (tradingWith) soldThisVisitRef.current = new Set();
+  }, [tradingWith]);
+
+  // First arrival at the market: R.O.V.E.R. introduces the three merchants.
+  useEffect(() => {
+    if (
+      locationId === MARKET_LOCATION &&
+      charactersVisible &&
+      roverIntroComplete &&
+      !playedScenes.includes("merchants")
+    ) {
+      playScene("merchants", { onDone: () => flashNotice("WALK UP TO A TRADER AND PRESS [E]") });
+    }
+  }, [locationId, charactersVisible]);
+
+  // Hugh's reaction every time he enters the boss arena (until Alpha Zeno is beaten).
+  useEffect(() => {
+    if (locationId === "caldera" && charactersVisible && !bossDefeated) {
+      playScene("bigAlpha", { interactive: false });
+    }
+  }, [locationId, charactersVisible]);
+
+  // Leaving a map stops whatever bark was playing there.
+  useEffect(() => {
+    setScene((active) => (active && !active.interactive ? null : active));
+  }, [locationId]);
+
   // ------------------------------------------
   // TRADER DIALOGUE
   // ------------------------------------------
 
   function openTrader(id) {
     heldKeys.current.clear();
+    if (id === "robot" && engineReady) {
+      collectEngine();
+      return;
+    }
+    if (id === "human" && !metTraders.includes(id)) {
+      const nextMet = [...metTraders, id];
+      setMetTraders(nextMet);
+      saveProgress({ metTraders: nextMet });
+      playScene("firstWeapon", { onDone: () => setTraderTalk({ id, mode: "menu" }) });
+      return;
+    }
     if (metTraders.includes(id)) {
       setTraderTalk({ id, mode: "menu", firstMenu: true });
     } else {
@@ -709,7 +880,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
 
   // Latest handlers for the loop (which is bound once).
   const actionRef = useRef({});
-  actionRef.current = { drillNode, findNearbyNode, findNearbyTrader, openTrader, setSelectedTool: selectTool };
+  actionRef.current = { drillNode, findNearbyNode, findNearbyTrader, openTrader, openRover, setSelectedTool: selectTool };
 
   useEffect(() => {
     const held = heldKeys.current;
@@ -722,8 +893,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         if (nearRoverRef.current) {
           event.preventDefault();
           held.clear();
-          setRoverOpen(true);
-          setShowIntroDialogue(false);
+          actionRef.current.openRover();
           return;
         }
         if (nearTraderRef.current) {
@@ -856,6 +1026,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         if (travelTarget) return setTravelTarget(null);
         if (roverOpen) return closeRover();
         if (traderTalk) return closeTrader();
+        if (scene?.interactive) return; // VoicedScene handles Esc (skip)
         if (tradingWith) return setTradingWith(null);
         if (inventoryOpen) return setInventoryOpen(false);
         if (key === "escape" && objectivesOpen && !paused) return setObjectivesOpen(false);
@@ -876,7 +1047,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [objectivesOpen, paused, roverOpen, travelTarget, traderTalk, tradingWith, inventoryOpen, fadeToBlack, fadeIn, rideStage]);
+  }, [objectivesOpen, paused, roverOpen, travelTarget, traderTalk, tradingWith, inventoryOpen, fadeToBlack, fadeIn, rideStage, scene]);
 
   // ------------------------------------------
   // R.O.V.E.R. DIALOGUE
@@ -884,11 +1055,17 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
 
   function closeRover() {
     setRoverOpen(false);
+    setRoverEnding(false);
     setRoverLine(ROVER_ASK_NAME);
     setHughReply(false);
   }
 
-  const roverActions = roverIntroComplete
+  const roverActions = roverEnding
+    ? [
+        { label: "TAKE R.O.V.E.R. WITH YOU", onClick: () => chooseEnding("A") },
+        { label: "SAY GOODBYE", onClick: () => chooseEnding("B") },
+      ]
+    : roverIntroComplete
     ? [
         ...locations
           .filter((location) => location.id !== locationId)
@@ -896,7 +1073,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
             label: `${destination.name}${travelLock(destination, wallet) ? ` (NEED ${travelLock(destination, wallet).toUpperCase()})` : ""}`,
             onClick: () =>
               travelLock(destination, wallet)
-                ? (closeRover(), flashNotice(`BUY A ${travelLock(destination, wallet).toUpperCase()} FROM DJ-CMONEY FIRST`))
+                ? (closeRover(), flashNotice(`BUY A ${travelLock(destination, wallet).toUpperCase()} FROM CAPTAIN McMARS FIRST`))
                 : rideRover(destination),
           })),
         { label: "NOT NOW", onClick: closeRover },
@@ -915,7 +1092,9 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
               { label: "NOT YET", onClick: closeRover },
             ];
 
-  const roverMessage = roverIntroComplete
+  const roverMessage = roverEnding
+    ? "Your ship is repaired, Hugh Mann. All systems online. I suppose... this is goodbye?"
+    : roverIntroComplete
     ? rover_travel_line
     : hughReply
       ? user_dialogue[0]
@@ -1077,12 +1256,7 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
         <button
           aria-label="Talk to R.O.V.E.R."
           className="rover-npc"
-          onClick={() => {
-            if (!movementBlocked) {
-              setRoverOpen(true);
-              setShowIntroDialogue(false);
-            }
-          }}
+          onClick={() => !movementBlocked && openRover()}
           style={{ left: `${ROVER_SPOT.x}%`, top: `${ROVER_SPOT.y}%` }}
           type="button"
         >
@@ -1221,11 +1395,46 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
 
       {tradingWith && (
         <TradingPost
+          bossDefeated={bossDefeated}
           initialTraderId={tradingWith}
           onChange={updateWallet}
+          onEvent={onTradeEvent}
           onLeave={() => setTradingWith(null)}
           wallet={wallet}
         />
+      )}
+
+      {scene && (
+        <VoicedScene
+          className={tradingWith ? "voiced-scene--over-market" : ""}
+          endActions={scene.endActions}
+          interactive={scene.interactive}
+          key={scene.key}
+          onDone={() => endScene(scene)}
+          scene={SCENES[scene.id]}
+        />
+      )}
+
+      {showEnding && (
+        <div className="game-ending" role="dialog" aria-modal="true" aria-labelledby="game-ending-title">
+          <section className="game-panel game-ending__panel">
+            <p className="game-eyebrow">PROJECT GEAUX HOME // MISSION COMPLETE</p>
+            <h2 id="game-ending-title">THE END</h2>
+            <p>
+              {ending === "A"
+                ? "Hugh Mann and R.O.V.E.R. blast off for Earth together. Somewhere, a hat-maker is about to get a very strange order."
+                : "Hugh Mann blasts off alone. Down on the red sand, R.O.V.E.R. watches the sky... and remembers."}
+            </p>
+            <div className="travel-prompt__actions">
+              <button className="game-button" onClick={() => { saveProgress(); onMainMenu(); }} type="button">
+                MAIN MENU
+              </button>
+              <button className="game-button" onClick={() => setShowEnding(false)} type="button">
+                KEEP EXPLORING
+              </button>
+            </div>
+          </section>
+        </div>
       )}
 
       <div className={`black-fade${fadeIn || fadeToBlack ? " black-fade--active" : ""}`} />
@@ -1291,9 +1500,9 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
             <h2 id="travel-prompt-title">TRAVEL TO {travelTarget.name}?</h2>
             <p>
               {travelLock_ === "filter"
-                ? "The sulfur air will choke you. Buy a FILTER from DJ-CMoney at the Vastitas market first."
+                ? "The sulfur air will choke you. Buy a FILTER from Captain McMars at the Vastitas market first."
                 : travelLock_ === "blaster"
-                  ? "Alpha Zeno waits in the caldera. Buy a BLASTER from DJ-CMoney before you go."
+                  ? "Alpha Zeno waits in the caldera. Buy a BLASTER from Captain McMars before you go."
                   : travelTarget.id === "caldera"
                     ? "Final boss ahead: Alpha Zeno. Dodge its lunge, keep firing with SPACE or click. You regenerate health when out of combat."
                 : travelTarget.needsFilter
