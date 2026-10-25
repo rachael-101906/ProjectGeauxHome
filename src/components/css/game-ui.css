@@ -1741,3 +1741,36 @@ progress::-moz-progress-bar {
 .inventory-grid--gear { grid-template-columns: 1fr; }
 .inventory-icon { height: 24px; image-rendering: pixelated; width: 24px; }
 .inventory-grid { gap: 8px; } .inventory-grid .inventory-item { margin: 0; padding: 10px 12px; }
+
+/* Location title card: "press any key" hint */
+.location-title-splash__skip {
+  display: block;
+  animation: title-skip-blink 1.2s steps(2, end) infinite;
+  color: var(--game-muted);
+  font-size: 7px;
+  margin-top: 18px;
+}
+@keyframes title-skip-blink { 50% { opacity: 0; } }
+
+/* ===== Voiced scenes (recorded audio + synced captions) ===== */
+.voiced-scene { z-index: 26; }
+.voiced-scene__hint { color: var(--game-muted); font-size: 7px; margin-top: 10px; }
+.voiced-scene--bark { cursor: pointer; }
+/* Over the trading post (which is position: fixed, z-index 35). */
+.voiced-scene--over-market { bottom: 12px; left: 12px; position: fixed; right: 12px; z-index: 45; }
+
+/* ===== Ending ===== */
+.game-ending {
+  align-items: center;
+  background: rgba(3, 8, 12, 0.9);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 16px;
+  position: fixed;
+  z-index: 50;
+}
+.game-ending__panel { max-width: 560px; padding: 32px; text-align: center; }
+.game-ending__panel h2 { color: var(--game-cyan); font-size: clamp(20px, 4vw, 34px); margin: 12px 0 18px; }
+.game-ending__panel p:not(.game-eyebrow) { font-size: 9px; line-height: 2; }
+.inventory-grid { gap: 8px; } .inventory-grid .inventory-item { margin: 0; padding: 10px 12px; }

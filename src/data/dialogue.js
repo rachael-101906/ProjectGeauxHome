@@ -12,8 +12,8 @@ const rover_travel_line = "Beep boop. I can take you anywhere. Choose a destinat
 // Short one-liners (used by the trading post header + the legacy TradeScreen).
 const TRADER_LINES = {
   martian: "Ooh, shiny rocks! Dr Oxy Genn pays top Tintinas. Mostly top. Sometimes.",
-  human: "Captain McMars here. I handle ship systems, repairs, and getting you home in one piece.",
-  robot: "Yo, yo, yo. DJ-CMoney in the dome! Need gear or that sulfur filter? I got you.",
+  human: "Arg! Captain McMars at yer service. Finest gear on Mars. Don't ask where I got it.",
+  robot: "Yo, yo, yo. DJ-C Money in the dome! Bring me materials and I'll rebuild that ship of yours.",
 };
 
 // Full conversations for the traders at Vastitas Borealis.
@@ -32,7 +32,7 @@ const TRADER_DIALOGUE = {
     topics: [
       {
         label: "WHAT ARE TINTINAS?",
-        reply: "The finest currency on Mars! Little gold T-Bits. Spend them with DJ-CMoney on drills, blasters and that sulfur filter you'll be needing.",
+        reply: "The finest currency on Mars! Little gold T-Bits. Spend them with Captain McMars on drills, blasters and that sulfur filter you'll be needing.",
       },
       {
         label: "WHERE DO I FIND ORE?",
@@ -49,38 +49,46 @@ const TRADER_DIALOGUE = {
   human: {
     speaker: "CAPTAIN McMARS",
     intro: [
-      "Aye, ahoy, me matie. Captain McMars reportin' for duty. Me and me crew of two specialize in ship systems and upgrades along with my trusty cyborg parrot, Mr. Squawkers",
-      "Bring the required raw goodies, and we can fix the Comm Array, Life Support, Fusion Power, and Propulsion of your fine ship. It's always good business with a space pirate, me matie!",
+      "Aye, ahoy, me matie. Captain McMars reportin' for duty. Me and me crew of two deal in the finest gear on Mars, along with my trusty cyborg parrot, Mr. Squawkers.",
+      "Drills, blasters, and a Sulfur Filter for the Olympus air. Bring me Tintinas and it's yours. Just don't ask where any of it came from, arg.",
     ],
-    repeat: "Arg, look who it is, Mr. Squawkers. Back again, space cowboy? We get those ship systems online, arg.",
+    repeat: "Arg, look who it is, Mr. Squawkers. Back again, space cowboy? What'll it be?",
     topics: [
       {
-        label: "WHAT DOES EACH SYSTEM DO?",
-        reply: "The Comm Array lets Earth hear you. Life Support keeps you breathing. Fusion Power supplies energy. Propulsion gets you off Mars. Restore all four to go home.",
+        label: "WHY DO I NEED A FILTER?",
+        reply: "Olympus Mons air is thick with sulfur, matie. Buy me Sulfur Filter before ye head up there. Once it's yours, the route's open for good.",
       },
       {
-        label: "WHY THAT INSTALLATION ORDER?",
-        reply: "Ship systems depend on one another. Restore them in order: Comm Array, Life Support, Fusion Power, then Propulsion.",
+        label: "WHICH BLASTER SHOULD I GET?",
+        reply: "T1 gets ye started, T2 hits harder, and the T3 melts Zenos like butter. Equip it with [2], then fire with SPACE or a click.",
+      },
+      {
+        label: "WHERE DID YOU GET ALL THIS?",
+        reply: "Ugh, don't ask me where I got that. Mr. Squawkers, cover his ears.",
       },
     ],
-    prompt: "Any other ship questions, pilot?",
-    farewell: "Bring the materials and we will get you home.",
+    prompt: "Anything else, matie? Mr. Squawkers is gettin' hungry.",
+    farewell: "Fair winds, space cowboy. Arg!",
   },
   robot: {
     speaker: "DJ-CMONEY",
     intro: [
-      "Yo, yo, yo! DJ-CMoney in the dome! Only bot on Mars still spinnin' vinyl and slingin' gear.",
-      "Drills, blasters, and the Sulfur Filter. You bring the Tintinas, I bring the heat. Cash only, space cowboy.",
+      "Yo, yo, yo! DJ-C Money in the dome! Only bot on Mars still spinnin' vinyl and rebuildin' spaceships.",
+      "Bring me raw materials and I'll hook up your Comm Array, Life Support, Fusion Power, and Propulsion. In that order. Trust me. Mostly.",
     ],
-    repeat: "My favorite customer is back! What we copping today?",
+    repeat: "My favorite customer is back! What we building today?",
     topics: [
       {
-        label: "WHY DO I NEED A FILTER?",
-        reply: "Olympus Mons air is full of sulfur. Buy my Sulfur Filter before heading up there. Once purchased, it permanently unlocks the route and protects you while mining.",
+        label: "WHAT DOES EACH SYSTEM DO?",
+        reply: "Comm Array lets Earth hear you. Life Support keeps you breathing. Fusion Power keeps the lights on. Propulsion gets you off this rock. All four and you can geaux home.",
       },
       {
-        label: "WHICH BLASTER SHOULD I GET?",
-        reply: "T1 is a start, T2 hits harder, and T3 is the Zeno melter. Equip with [2], then fire with SPACE or click.",
+        label: "WHY THAT ORDER?",
+        reply: "Each system runs off the last one. Install them out of order and you get a very short, very loud flight.",
+      },
+      {
+        label: "CAN I TRUST YOU?",
+        reply: "Can you trust me? Ha! You have my word. And my word is... mostly good.",
       },
     ],
     prompt: "What else you need to know? Ask away, I got all day. Literally. Mars days are long.",

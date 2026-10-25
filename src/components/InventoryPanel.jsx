@@ -13,7 +13,7 @@ export default function InventoryPanel({ inventory = {}, gear = {}, tintinas = 0
     { name: `T${drillTier}D DRILL`, icon: DRILL_FRAMES[drillTier]?.[0], status: "EQUIPPED [1]" },
     ...(blasters.length
       ? blasters.map((b) => ({ name: b.name, icon: BLASTER_ART[b.id], status: `${b.damage} DMG` }))
-      : [{ name: "NO BLASTER", icon: BLASTER_ART.t1b, status: "BUY FROM DJ-CMONEY", dim: true }]),
+      : [{ name: "NO BLASTER", icon: BLASTER_ART.t1b, status: "BUY FROM CAPTAIN McMARS", dim: true }]),
     { name: "SULFUR FILTER", icon: null, status: gear.hasFilter ? "INSTALLED" : "NOT OWNED", dim: !gear.hasFilter },
   ];
 
