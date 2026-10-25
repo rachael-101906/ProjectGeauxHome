@@ -9,15 +9,13 @@ import { isVoiceMuted, loadVoiceLine, setVoiceMuted } from '../systems/voice.js'
 // `portrait` (optional) = a full 32x32 sprite for speakers other than Hugh / R.O.V.E.R.
 // (e.g. the traders). `portraitText` = emoji fallback when no art exists yet.
 export default function RoverDialogue({ message: messageOverride, actions = [], speaker = "R.O.V.E.R.", portrait, portraitText }) {
-  const text = messageOverride || 'Beep boop. R.O.V.E.R. online.'
+  const text = messageOverride || 'Beep boop. R.O.V.E.R. here, a Really Optimistic Very Enthusastic Rapscallion.'
   const [visibleText, setVisibleText] = useState('')
   const done = visibleText.length >= text.length
   const isHugh = speaker === 'HUGH MANN'
   const isRover = speaker === 'R.O.V.E.R.' || (!portrait && !portraitText)
 
   const finishTyping = useRef(() => {})
-
-  const [muted, setMuted] = useState(isVoiceMuted)
 
   useEffect(() => {
     setVisibleText('')
@@ -83,7 +81,7 @@ export default function RoverDialogue({ message: messageOverride, actions = [], 
       cancelAnimationFrame(raf)
       audio?.pause()
     }
-  }, [text, speaker, muted])
+  })
 
   useEffect(() => {
     function onKeyDown(event) {
@@ -126,14 +124,6 @@ export default function RoverDialogue({ message: messageOverride, actions = [], 
       <div className="rover-dialogue__content">
         <div className="rover-dialogue__speaker">
           {speaker}
-          <button
-            aria-label={muted ? 'Unmute voice' : 'Mute voice'}
-            className="rover-dialogue__mute"
-            onClick={() => { setVoiceMuted(!muted); setMuted(!muted) }}
-            type="button"
-          >
-            {muted ? 'VOICE OFF' : 'VOICE ON'}
-          </button>
         </div>
         <p aria-live="polite" className="rover-dialogue__text text-sm">{visibleText}<span aria-hidden="true" className="rover-dialogue__cursor">▌</span></p>
         {done && actions.length > 0 && (
