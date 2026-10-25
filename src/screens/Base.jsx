@@ -848,13 +848,6 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     }
   }, [locationId, charactersVisible]);
 
-  // Hugh's reaction every time he enters the boss arena (until Alpha Zeno is beaten).
-  useEffect(() => {
-    if (locationId === "caldera" && charactersVisible && !bossDefeated) {
-      playScene("bigAlpha", { interactive: false });
-    }
-  }, [locationId, charactersVisible]);
-
   // Leaving a map stops whatever bark was playing there.
   useEffect(() => {
     setScene((active) => (active && !active.interactive ? null : active));

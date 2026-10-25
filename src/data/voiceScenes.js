@@ -170,12 +170,6 @@ const SCENES = {
       { who: "hugh", words: [[21.94, 22.46, "Uh,"], [23.02, 23.2, "you"], [23.2, 23.42, "could"], [23.42, 23.7, "say"], [23.7, 23.94, "I"], [23.94, 24.12, "had"], [24.12, 24.3, "my"], [24.3, 24.76, "doubts."]] },
     ],
   },
-  bigAlpha: {
-    file: "Hugh seeing the big alpha.mp3",
-    lines: [
-      { who: "hugh", words: [[0.0, 0.3, "Now"], [0.3, 0.94, "that's"], [0.94, 1.06, "a"], [1.06, 1.54, "big"], [1.54, 1.98, "alpha."]] },
-    ],
-  },
   endingTakeRover: {
     file: "Option A Hugh takes ROVER with.mp3",
     lines: [
