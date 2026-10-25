@@ -116,3 +116,13 @@ export function updateSaveSlot(slot, updates) {
 
   return writeSaveSlots(saves);
 }
+
+// Deletes a mission (used when the game is finished, so the next run starts from the beginning).
+export function clearSaveSlot(slot) {
+  if (!Number.isInteger(slot) || slot < 0 || slot >= slotCount) {
+    throw new RangeError("Choose a valid mission slot.");
+  }
+  const saves = readSaveSlots();
+  saves[slot] = null;
+  return writeSaveSlots(saves);
+}

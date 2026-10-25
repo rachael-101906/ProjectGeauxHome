@@ -6,8 +6,10 @@ import MainMenu from "./screens/MainMenu.jsx";
 import SaveSelect from "./screens/SaveSelect.jsx";
 import Base from "./screens/Base.jsx";
 import IntroStory from "./components/blocks/IntroStory.jsx";
+import EndCutscene from "./components/blocks/EndCutscene.jsx";
 import PixelTransition from "./components/PixelTransition.jsx";
 import {
+  clearSaveSlot,
   createSaveSlot,
   readSaveSlots,
   resetSaveSlots,
@@ -59,6 +61,17 @@ function App() {
     setActiveSlot(save.slot);
     navigateTo(save.status === "briefing" ? "intro-story" : "base");
   }
+
+  // The ending cutscene is over: delete this mission and go back to the beginning.
+  const finishGame = useCallback(() => {
+    try {
+      if (activeSlot !== null) setSaveState({ slots: clearSaveSlot(activeSlot), error: "" });
+    } catch {
+      /* nothing to clear */
+    }
+    setActiveSlot(null);
+    navigateTo("main-menu");
+  }, [activeSlot]);
 
   const saveMission = useCallback(
     (updates) => {
@@ -118,10 +131,13 @@ function App() {
         }}
       />
     );
+  } else if (screen === "ending") {
+    activeScreen = <EndCutscene onFinish={finishGame} />;
   } else if (screen === "base") {
     const save = saveState.slots[activeSlot];
     activeScreen = save ? (
       <Base
+        onGameComplete={() => navigateTo("ending")}
         onMainMenu={() => navigateTo("main-menu")}
         onSave={saveMission}
         saveError={saveState.error}
