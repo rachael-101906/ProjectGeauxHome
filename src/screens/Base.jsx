@@ -23,6 +23,7 @@ import olympusMons from "../components/assets/backgrounds/olympus-basalt.png";
 import olympusBoss from "../components/assets/backgrounds/olympus-boss.png";
 
 import { startRandomEvents } from "../systems/events.js";
+import { isMusicMuted, playMusic, setMusicMuted, stopMusic, stopMusicIf } from "../systems/music.js";
 import oreTypes from "../data/ores.js";
 import shop from "../data/shop.js";
 import upgrades from "../data/upgrades.js";
@@ -393,6 +394,27 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     return () => window.clearTimeout(timer);
   }, []);
 
+  // ------------------------------------------
+  // MUSIC
+  // ------------------------------------------
+
+  // Intro music plays through the briefing and the opening fade, and stops when Hugh wakes up
+  // (the moment he appears on the crash site and says "Ughh... where am I?").
+  useEffect(() => {
+    if (!savedGame.roverIntroComplete) playMusic("intro");
+    return () => stopMusic();
+  }, []);
+
+  useEffect(() => {
+    if (charactersVisible) stopMusicIf("intro");
+  }, [charactersVisible]);
+
+  // Final boss music: only in the Olympus Caldera, and it fades out once Alpha Zeno is down.
+  useEffect(() => {
+    if (locationId === "caldera" && !bossDefeated) playMusic("boss");
+    else stopMusicIf("boss");
+  }, [locationId, bossDefeated]);
+
   // Each location gets a brief title card before Hugh and the NPCs appear.
   useEffect(() => {
     setShowLocationTitle(true);
@@ -726,6 +748,14 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
           actionRef.current.drillNode(node);
           return;
         }
+      }
+
+      if (event.key.toLowerCase() === "m" && !event.repeat) {
+        // M mutes / unmutes the music.
+        const muted = !isMusicMuted();
+        setMusicMuted(muted);
+        flashNotice(muted ? "MUSIC OFF [M]" : "MUSIC ON [M]");
+        return;
       }
 
       if (event.key === "3" && !event.repeat) {
