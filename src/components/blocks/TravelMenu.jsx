@@ -1,4 +1,4 @@
-import { GAME_LOCATIONS } from "../data/gameLocations.js";
+import { GAME_LOCATIONS } from "../../data/gameLocations.js";
 import "./game-ui.css";
 
 export default function TravelMenu({

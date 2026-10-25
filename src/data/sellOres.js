@@ -1,11 +1,9 @@
-// martian ore prices - sell in Tintinas
+export const SELL_PRICES = {
+  ice: 2,
+  iron: 8,
+  silica: 10,
+  sulfur: 12,
+  basalt: 20,
+};
 
-const sellOres = {
-    ice: 5,
-    iron: 15,
-    silica: 25,
-    sulfur: 35,
-    basalt: 60
-}
-
-export default sellOres;
+export default SELL_PRICES; 

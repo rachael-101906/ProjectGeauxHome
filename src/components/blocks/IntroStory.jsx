@@ -1,4 +1,4 @@
-import "./game-ui.css";
+import "../css/game-ui.css";
 
 export default function IntroStory({ onBeginMission }) {
   return (
@@ -17,7 +17,7 @@ export default function IntroStory({ onBeginMission }) {
           <p>
             YOUR TRANSPORT HAS CRASHED
             <br />
-            ON THE PLANET MARS, IN THE DESRT REGION OF ARCADIA PLANITIA.
+            ON THE PLANET MARS, IN THE DESERT REGION OF ARCADIA PLANITIA.
           </p>
           <p>
             YOUR LIFE SUPPORT SYSTEMS

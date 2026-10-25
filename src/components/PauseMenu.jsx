@@ -1,4 +1,4 @@
-import "./game-ui.css";
+import "./css/game-ui.css";
 
 const menuItems = [
   { label: "RESUME", action: "onResume" },
@@ -30,7 +30,6 @@ export default function PauseMenu({
         <h2 className="game-title" id="pause-menu-title">
           SYSTEM MENU
         </h2>
-
         <nav aria-label="Pause menu" className="pause-menu__actions">
           {menuItems.map(({ label, action, variant }) => (
             <button

@@ -4,7 +4,7 @@ import React from "react";
 import { useState } from "react";
 
 import homeBackground from "../components/assets/backgrounds/home-page.png";
-import logo from "../components/assets/logos/project geaux home main logo.png";
+import logo from "../components/assets/logos/home_main_logo.png";
 
 export default function MainMenu({ onStartGame }) {
   const [panel, setPanel] = useState(null);
@@ -14,7 +14,7 @@ export default function MainMenu({ onStartGame }) {
       className="main-menu"
       style={{ backgroundImage: `url("${homeBackground}")` }}
     >
-      <div className="logo-frame">
+      <div className="logo-frame logo-glow">
         <img
           src={logo}
           alt="Project Geaux Home"
@@ -43,7 +43,7 @@ export default function MainMenu({ onStartGame }) {
             {panel === "help" ? (
               <p>Use the arrow keys or W A S D to move Hugh Mann. Reach the edge of Arcadia to travel to another sector.</p>
             ) : (
-              <p>PROJECT GEAUX HOME<br />A pixel-art Mars survival adventure.</p>
+              <p>PROJECT GEAUX HOME<br />A pixel-art Mars survival adventure. By import hackathon.teamName, GeauxHack2026</p>
             )}
             <button className="menu-button menu-info__close" onClick={() => setPanel(null)} type="button">
               BACK

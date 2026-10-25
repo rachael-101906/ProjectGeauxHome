@@ -357,7 +357,7 @@ progress::-moz-progress-bar {
   background: #29232b;
   border: 2px solid #684532;
   box-sizing: border-box;
-  height: 19px;
+  height: 100px;
   overflow: hidden;
   position: relative;
   width: 100%;
@@ -371,7 +371,7 @@ progress::-moz-progress-bar {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 200px;
+  width: 80px; 
 }
 
 .hud-objective {
@@ -1209,16 +1209,24 @@ progress::-moz-progress-bar {
 .hugh-mann[data-walking] .hugh-mann__sprite { animation: hugh-bob 320ms steps(2, end) infinite; }
 @keyframes hugh-bob { 50% { transform: translateY(-3px); } }
 
-/* Drill sprite (src/components/characters/DrillT{tier}_{frame}.png) held in Hugh's hand. */
+/* Drill sprite held in Hugh's hand */
 .hugh-drill {
-  image-rendering: pixelated;
-  left: 50%;
-  pointer-events: none;
   position: absolute;
+  left: 50%;
   top: 40%;
   width: 44px;
+  height: auto;
+  image-rendering: pixelated;
+  pointer-events: none;
+  z-index: 5;
+  display: block;
 }
-.hugh-mann[data-facing="left"] .hugh-drill { left: auto; right: 50%; transform: scaleX(-1); }
+
+.hugh-mann[data-facing="left"] .hugh-drill {
+  left: auto;
+  right: 50%;
+  transform: scaleX(-1);
+}
 
 /* Hop onto R.O.V.E.R. */
 .hugh-mann--jumping {
@@ -1604,3 +1612,76 @@ progress::-moz-progress-bar {
 /* Alpha Zeno boss */
 .mob--boss .mob__bar { border-color: #9dff5c; height: 6px; }
 .mob--boss .mob__bar span { background: #9dff5c; }
+
+/* Inventory */ 
+.inventory-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background: rgba(8, 15, 30, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+.inventory-panel {
+  position: relative;
+  width: min(520px, 100%);
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 28px;
+  background: rgba(20, 32, 52, 0.97);
+  border: 1px solid rgba(160, 210, 255, 0.4);
+  border-radius: 16px;
+  color: white;
+  box-shadow: 0 0 35px rgba(100, 180, 255, 0.2);
+}
+
+.inventory-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  border: 0;
+  background: transparent;
+  color: white;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.inventory-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  margin: 8px 0;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+}
+
+/* Trade Stands */ 
+.trading-post {
+  background-image:
+    linear-gradient(
+      rgba(5, 10, 25, 0.25),
+      rgba(5, 10, 25, 0.55)
+    ),
+    var(--trading-post-background);
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.trading-post__panel {
+  background: rgba(8, 15, 30, 0.88);
+  backdrop-filter: blur(3px);
+}

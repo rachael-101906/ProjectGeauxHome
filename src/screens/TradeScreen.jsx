@@ -11,9 +11,9 @@ import { formatCost } from '../systems/helpers'
 import ResourceIcon from '../components/ResourceIcon'
 
 const TABS = [
-  { id: 'martian', label: 'Marty McMars', sub: 'Buys ore', Icon: Rocket },
-  { id: 'human', label: 'DJ-TMoney', sub: 'Sells gear', Icon: Users },
-  { id: 'robot', label: 'Dr. Oxy Genn', sub: 'Ship upgrades', Icon: Bot },
+  { id: 'martian', label: 'Dr. Oxy Genn', sub: 'Buys ore', Icon: Rocket },
+  { id: 'robot', label: 'DJ-TMoney', sub: 'Sells gear', Icon: Users },
+  { id: 'human', label: 'Captain McMars', sub: 'Ship upgrades', Icon: Bot },
 ]
 
 const btn =
