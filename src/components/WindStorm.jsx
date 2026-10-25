@@ -9,9 +9,10 @@ const STREAKS = [
 
 const SWIRL = "M2 30 C40 30 60 6 100 6 C132 6 140 26 120 30 C104 33 98 20 110 16";
 
-export default function WindStorm() {
+// blowLeft: real Mars wind came from the east, so the streaks blow right-to-left.
+export default function WindStorm({ blowLeft = false }) {
   return (
-    <div aria-hidden="true" className="wind-storm">
+    <div aria-hidden="true" className={`wind-storm${blowLeft ? " wind-storm--left" : ""}`}>
       <div className="wind-storm__haze" />
       {STREAKS.map(([top, delay, duration, scale, opacity], i) => (
         <svg
