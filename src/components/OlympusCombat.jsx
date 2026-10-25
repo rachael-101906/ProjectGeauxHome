@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import mobs from "../data/mobs.js";
 import { ALPHA_FRAMES, MOB_ART } from "../data/art.js";
-import fireball from "./assets/icons/fireball.png";
 
 // Mob tuning (positions/speeds are in % of the screen).
 // Keys match src/data/mobs.js.
@@ -11,9 +10,19 @@ const MOB_TUNING = {
   alphaZeno: { speed: 6, reward: 150, size: 140 },
 };
 // Boss arena: Alpha Zeno lunges every few seconds and calls in B-Zeno minions.
-const BOSS_LUNGE_EVERY_MS = 5000;
-const BOSS_LUNGE_MS = 800;
-const BOSS_LUNGE_SPEED_X = 3.2;
+const BOSS_LUNGE_EVERY_MS = 3500;
+const BOSS_LUNGE_MS = 700;
+const BOSS_LUNGE_SPEED_X = 5;
+const BOSS_LUNGE_WINDUP_MS = 450; // boss flashes green before lunging
+// Boss acid spit: aimed spreads, plus a full ring every few volleys.
+const SPIT_EVERY_MS = 2200;
+const SPIT_SPREAD = [-0.3, -0.15, 0, 0.15, 0.3]; // radians around Hugh
+const SPIT_RING_EVERY = 3; // every 3rd volley is a 360° ring
+const SPIT_RING_COUNT = 10;
+const SPIT_SPEED = 32;
+const SPIT_LIFE_S = 3;
+const SPIT_DAMAGE = 12;
+const SPIT_HIT_RANGE = { x: 2.5, y: 4.5 };
 const BOSS_MINION_EVERY_MS = 7000;
 const BOSS_MAX_MINIONS = 2;
 const ALPHA_FRAME_MS = 300;
@@ -21,9 +30,14 @@ const MAX_MOBS = 4;
 const SPAWN_EVERY_MS = 2800;
 const HIT_COOLDOWN_MS = 900; // how often one mob can hurt Hugh
 const TOUCH_RANGE = { x: 4, y: 7 };
-const SHOT_SPEED = 80;
+const SHOT_SPEED = 60; // slow enough to see the bolt travel
 const SHOT_LIFE_S = 1.2;
 const SHOT_HIT_RANGE = { x: 4, y: 8 };
+// Pixel burst when a bolt hits a mob.
+const SPARK_COUNT = 12;
+const SPARK_LIFE_S = 0.45;
+const SPARK_SPEED = 30;
+const SPARK_COLORS = ["#fff6b0", "#ffd23f", "#ff8a1f", "#ff3d3d"];
 const BOUNDS = { minX: 6, maxX: 94, minY: 52, maxY: 90 };
 
 let nextId = 1;
@@ -63,7 +77,7 @@ export default function OlympusCombat({
   bossCleared = false,
   onBossDefeated,
 }) {
-  const world = useRef({ mobs: [], shots: [], lastSpawn: 0, kills: 0, alphaSpawned: false });
+  const world = useRef({ mobs: [], shots: [], sparks: [], spits: [], lastSpawn: 0, kills: 0, alphaSpawned: false });
   const [, setFrame] = useState(0);
   const props = useRef({});
   props.current = { armed, blasterDamage, paused, onHurt, onKill, boss, bossCleared, onBossDefeated };
@@ -81,6 +95,7 @@ export default function OlympusCombat({
         y: y - 5,
         vx: (dirX / length) * SHOT_SPEED,
         vy: (dirY / length) * SHOT_SPEED,
+        angle: Math.atan2(dirY, dirX),
         age: 0,
       });
     }
@@ -121,6 +136,8 @@ export default function OlympusCombat({
             alpha.x = 50;
             alpha.y = BOUNDS.minY + 6;
             alpha.nextLunge = now + BOSS_LUNGE_EVERY_MS;
+            alpha.nextSpit = now + 2500;
+            alpha.volleys = 0;
             alpha.lastHit = now + 2500 - HIT_COOLDOWN_MS; // grace period so Hugh can line up a shot
             w.mobs.push(alpha);
             w.lastSpawn = now;
@@ -149,7 +166,22 @@ export default function OlympusCombat({
               mob.lungeUntil = now + BOSS_LUNGE_MS;
               mob.nextLunge = now + BOSS_LUNGE_EVERY_MS;
             }
+            mob.charging = mob.nextLunge - now < BOSS_LUNGE_WINDUP_MS;
+            if (mob.charging) speed = 0; // plant feet, then burst forward
             if (now < (mob.lungeUntil ?? 0)) speed *= BOSS_LUNGE_SPEED_X;
+            if (now > mob.nextSpit) {
+              mob.nextSpit = now + SPIT_EVERY_MS;
+              mob.volleys += 1;
+              const ox = mob.x;
+              const oy = mob.y - 10; // from the mouth, not the feet
+              const angles =
+                mob.volleys % SPIT_RING_EVERY === 0
+                  ? Array.from({ length: SPIT_RING_COUNT }, (_, i) => (i / SPIT_RING_COUNT) * Math.PI * 2)
+                  : SPIT_SPREAD.map((off) => Math.atan2(hugh.y - 5 - oy, hugh.x - ox) + off);
+              for (const a of angles) {
+                w.spits.push({ id: nextId++, x: ox, y: oy, vx: Math.cos(a) * SPIT_SPEED, vy: Math.sin(a) * SPIT_SPEED, age: 0 });
+              }
+            }
           }
           if (Math.abs(dx) > TOUCH_RANGE.x / 2 || Math.abs(dy) > TOUCH_RANGE.y / 2) {
             mob.x += (dx / dist) * speed * dt;
@@ -183,6 +215,20 @@ export default function OlympusCombat({
             target.hp -= p.blasterDamage;
             target.flash = 0.15;
             shot.age = SHOT_LIFE_S;
+            for (let i = 0; i < SPARK_COUNT; i++) {
+              const a = Math.random() * Math.PI * 2;
+              const v = SPARK_SPEED * (0.4 + Math.random() * 0.6);
+              w.sparks.push({
+                id: nextId++,
+                x: shot.x,
+                y: shot.y,
+                vx: Math.cos(a) * v,
+                vy: Math.sin(a) * v,
+                age: 0,
+                size: Math.random() < 0.5 ? 4 : 6,
+                color: SPARK_COLORS[Math.floor(Math.random() * SPARK_COLORS.length)],
+              });
+            }
             if (target.hp <= 0) {
               w.kills += 1;
               p.onKill(MOB_TUNING[target.type].reward, mobs[target.type].name);
@@ -191,6 +237,33 @@ export default function OlympusCombat({
           }
         }
         w.shots = w.shots.filter((s) => s.age < SHOT_LIFE_S);
+        for (const spit of w.spits) {
+          spit.x += spit.vx * dt;
+          spit.y += spit.vy * dt;
+          spit.age += dt;
+          if (
+            Math.abs(spit.x - hugh.x) < SPIT_HIT_RANGE.x &&
+            Math.abs(spit.y - (hugh.y - 5)) < SPIT_HIT_RANGE.y
+          ) {
+            spit.age = SPIT_LIFE_S;
+            // Brief grace so a tight spread can't land all at once.
+            if (now > (w.spitGraceUntil ?? 0)) {
+              w.spitGraceUntil = now + 400;
+              p.onHurt(SPIT_DAMAGE);
+            }
+          }
+        }
+        // Acid stops once the boss is gone.
+        if (!w.mobs.some((m) => m.type === "alphaZeno" && m.hp > 0)) w.spits = [];
+        w.spits = w.spits.filter((s) => s.age < SPIT_LIFE_S && s.x > -5 && s.x < 105 && s.y > -5 && s.y < 105);
+        for (const spark of w.sparks) {
+          spark.x += spark.vx * dt;
+          spark.y += spark.vy * dt;
+          spark.vx *= 0.9;
+          spark.vy *= 0.9;
+          spark.age += dt;
+        }
+        w.sparks = w.sparks.filter((s) => s.age < SPARK_LIFE_S);
         w.mobs = w.mobs.filter((m) => m.hp > 0);
       }
 
@@ -201,7 +274,7 @@ export default function OlympusCombat({
     return () => cancelAnimationFrame(raf);
   }, [hughPosition]);
 
-  const { mobs: liveMobs, shots } = world.current;
+  const { mobs: liveMobs, shots, sparks, spits } = world.current;
   const alphaFrame = ALPHA_FRAMES[Math.floor(performance.now() / ALPHA_FRAME_MS) % ALPHA_FRAMES.length];
   const alpha = liveMobs.find((mob) => mob.type === "alphaZeno");
   return (
@@ -217,7 +290,7 @@ export default function OlympusCombat({
       {liveMobs.map((mob) => (
         <div
           aria-label={mobs[mob.type].name}
-          className={`mob${mob.flash ? " mob--hit" : ""}${mob.type === "alphaZeno" ? " mob--boss" : ""}`}
+          className={`mob${mob.flash ? " mob--hit" : ""}${mob.type === "alphaZeno" ? " mob--boss" : ""}${mob.charging ? " mob--charging" : ""}`}
           key={mob.id}
           role="img"
           style={{
@@ -238,12 +311,31 @@ export default function OlympusCombat({
         </div>
       ))}
       {shots.map((shot) => (
-        <img
-          alt=""
+        <span
           className="blaster-shot"
           key={shot.id}
-          src={fireball}
-          style={{ left: `${shot.x}%`, top: `${shot.y}%` }}
+          style={{
+            left: `${shot.x}%`,
+            top: `${shot.y}%`,
+            transform: `translate(-50%, -50%) rotate(${shot.angle}rad)`,
+          }}
+        />
+      ))}
+      {spits.map((spit) => (
+        <span className="boss-spit" key={spit.id} style={{ left: `${spit.x}%`, top: `${spit.y}%` }} />
+      ))}
+      {sparks.map((spark) => (
+        <span
+          className="blaster-spark"
+          key={spark.id}
+          style={{
+            left: `${spark.x}%`,
+            top: `${spark.y}%`,
+            width: spark.size,
+            height: spark.size,
+            background: spark.color,
+            opacity: 1 - spark.age / SPARK_LIFE_S,
+          }}
         />
       ))}
     </>
