@@ -3,6 +3,7 @@ import roverPortrait from "./assets/characters/rover.png";
 import hughPortrait from "./assets/characters/Hugh.png";
 import { CAPTAIN_HUMAN, CLAW_BIT, OXY_FRAMES } from "../data/art.js";
 import { isVoiceMuted, setVoiceMuted } from "../systems/voice.js";
+import { duckMusic } from "../systems/music.js";
 
 // Who's talking -> name + portrait (Hugh / R.O.V.E.R. use the cropped sprite style).
 const SPEAKERS = {
@@ -37,6 +38,9 @@ export default function VoicedScene({ scene, interactive = true, endActions, onD
   const state = useRef(null);
   const doneRef = useRef(onDone);
   doneRef.current = onDone;
+
+  // Lower the background music while this scene is on screen.
+  useEffect(() => duckMusic(), []);
 
   // --- Playback clock -------------------------------------------------------
   useEffect(() => {

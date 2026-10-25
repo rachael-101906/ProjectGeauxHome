@@ -1741,6 +1741,39 @@ progress::-moz-progress-bar {
 .inventory-grid--gear { grid-template-columns: 1fr; }
 .inventory-icon { height: 24px; image-rendering: pixelated; width: 24px; }
 .inventory-grid { gap: 8px; } .inventory-grid .inventory-item { margin: 0; padding: 10px 12px; }
+/* Real NASA Mars weather readout, under the health panel. */
+.mars-weather-badge {
+  background: rgba(7, 16, 24, 0.85);
+  border: 1px solid rgba(137, 240, 255, 0.5);
+  color: var(--game-cyan);
+  font-family: "Press Start 2P", cursive;
+  font-size: 6px;
+  left: 12px;
+  line-height: 1.6;
+  max-width: min(320px, calc(100vw - 24px));
+  padding: 5px 7px;
+  pointer-events: auto;
+  position: absolute;
+  top: 104px;
+  z-index: 11;
+}
+.mars-weather-badge p + p { border-top: 1px solid rgba(137, 240, 255, 0.25); margin-top: 4px; padding-top: 4px; }
+
+/* Storm blows the way the real Mars wind did (mirrors streaks + grit). */
+.wind-storm--left { transform: scaleX(-1); }
+
+/* Solar radiation: pulsing sickly-yellow tint with pixel scanlines. */
+.radiation-overlay {
+  animation: storm-in 1s ease-out both, radiation-pulse 1.6s steps(4, end) infinite;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.12) 0 2px, transparent 2px 4px),
+    radial-gradient(ellipse at 50% 40%, rgba(214, 255, 90, 0.18), rgba(170, 200, 40, 0.32));
+  inset: 0;
+  pointer-events: none;
+  position: fixed;
+  z-index: 30;
+}
+@keyframes radiation-pulse { 50% { filter: brightness(1.5); } }
 
 /* Location title card: "press any key" hint */
 .location-title-splash__skip {
