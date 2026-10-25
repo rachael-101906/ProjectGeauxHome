@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import mobs from "../data/mobs.js";
 import { ALPHA_FRAMES, MOB_ART } from "../data/art.js";
+import blasterSfxUrl from "../../A20futuristic20gun20physical.mp3";
 
 // Mob tuning (positions/speeds are in % of the screen).
 // Keys match src/data/mobs.js.
@@ -41,6 +42,35 @@ const SPARK_COLORS = ["#fff6b0", "#ffd23f", "#ff8a1f", "#ff3d3d"];
 const BOUNDS = { minX: 6, maxX: 94, minY: 52, maxY: 90 };
 
 let nextId = 1;
+
+// Blaster sound. The file is a rapid-fire burst, so only its first shot is played.
+// Web Audio (not <audio>) so it starts instantly and overlapping shots don't cut each other off.
+const SHOT_SFX = { start: 0.025, duration: 0.19, volume: 0.5 };
+let audioCtx = null;
+let shotBuffer = null;
+
+function loadShotSound() {
+  if (audioCtx) return;
+  audioCtx = new AudioContext();
+  fetch(blasterSfxUrl)
+    .then((res) => res.arrayBuffer())
+    .then((bytes) => audioCtx.decodeAudioData(bytes))
+    .then((buffer) => { shotBuffer = buffer; })
+    .catch((error) => console.warn("Blaster sound failed to load:", error));
+}
+
+function playShotSound() {
+  if (!audioCtx || !shotBuffer) return;
+  if (audioCtx.state === "suspended") audioCtx.resume(); // browsers start audio muted until a click/key
+  const t = audioCtx.currentTime;
+  const source = audioCtx.createBufferSource();
+  source.buffer = shotBuffer;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(SHOT_SFX.volume, t);
+  gain.gain.linearRampToValueAtTime(0, t + SHOT_SFX.duration); // fade out so the cut doesn't click
+  source.connect(gain).connect(audioCtx.destination);
+  source.start(t, SHOT_SFX.start, SHOT_SFX.duration);
+}
 
 function spawnMob(forcedType) {
   const type = forcedType ?? (Math.random() < MOB_TUNING.bZeno.weight ? "bZeno" : "aZeno");
@@ -84,6 +114,7 @@ export default function OlympusCombat({
 
   // Shooting: Space fires the way Hugh faces; clicking fires at the cursor.
   useEffect(() => {
+    loadShotSound();
     function fire(dirX, dirY) {
       const { armed: isArmed, paused: isPaused } = props.current;
       if (!isArmed || isPaused) return;
@@ -98,6 +129,7 @@ export default function OlympusCombat({
         angle: Math.atan2(dirY, dirX),
         age: 0,
       });
+      playShotSound();
     }
     function onKey(event) {
       if (event.code !== "Space" || event.repeat) return;

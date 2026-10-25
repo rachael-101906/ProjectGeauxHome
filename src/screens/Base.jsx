@@ -24,6 +24,15 @@ import finalBossMusic from "../components/audio/final_boss.mp3";
 import olympusBoss from "../components/assets/backgrounds/olympus-boss.png";
 
 import { startRandomEvents } from "../systems/events.js";
+import {
+  FALLBACK_WEATHER,
+  loadMarsWeather,
+  loadSpaceWeather,
+  radiationEffects,
+  spaceWeatherLabel,
+  weatherEffects,
+  weatherLabel,
+} from "../systems/marsWeather.js";
 import { isMusicMuted, playMusic, setMusicMuted, stopMusic, stopMusicIf } from "../systems/music.js";
 import oreTypes from "../data/ores.js";
 import shop from "../data/shop.js";
@@ -166,6 +175,11 @@ const LOCATION_SUBTITLES = {
 const REGEN_DELAY_MS = 5000;
 const REGEN_PER_SECOND = 3;
 
+// Inside Olympus Mons (sulfur area + boss caldera): no dust storms, no cold.
+const SHELTERED_LOCATIONS = new Set(["olympus", "caldera"]);
+// Weather can wear Hugh down but never knock him out.
+const WEATHER_MIN_HEALTH = 10;
+
 // Why a destination is closed to Hugh right now (null = open).
 function travelLock(destination, wallet) {
   if (destination?.needsFilter && !wallet.gear.hasFilter) return "filter";
@@ -258,6 +272,8 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const [health, setHealth] = useState(100);
   const [hurtFlash, setHurtFlash] = useState(0);
   const [storm, setStorm] = useState(null);
+  const [marsWeather, setMarsWeather] = useState(null);
+  const [spaceWeather, setSpaceWeather] = useState(null);
   const [bossDefeated, setBossDefeated] = useState(Boolean(savedGame.bossDefeated));
   const [showVictory, setShowVictory] = useState(false);
   const bossMusicRef = useRef(null);
@@ -335,6 +351,8 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
   const lastHurtRef = useRef(0);
   const speedMultRef = useRef(1);
   const stormTriggerRef = useRef(null);
+  const weatherRef = useRef(weatherEffects(FALLBACK_WEATHER));
+  const radiationRef = useRef(null); // set only when NASA DONKI reports a real strong flare
 
   // ------------------------------------------
   // DERIVED STATE
@@ -632,25 +650,45 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
     const id = window.setInterval(() => {
       if (blockedRef.current || healthRef.current >= 100) return;
       if (Date.now() - lastHurtRef.current < REGEN_DELAY_MS) return;
-      healthRef.current = Math.min(100, healthRef.current + REGEN_PER_SECOND);
+      const outdoors = !SHELTERED_LOCATIONS.has(locationRef.current);
+      const regen = Math.round(REGEN_PER_SECOND * (outdoors ? weatherRef.current.regenMultiplier : 1));
+      healthRef.current = Math.min(100, healthRef.current + regen);
       setHealth(healthRef.current);
     }, 1000);
     return () => window.clearInterval(id);
   }, []);
 
+  // Real Mars weather (NASA InSight) tunes storm frequency, storm damage and outdoor regen.
+  // Live solar flares (NASA DONKI) unlock the radiation event.
+  useEffect(() => {
+    let cancelled = false;
+    loadMarsWeather().then((weather) => {
+      if (cancelled) return;
+      weatherRef.current = weatherEffects(weather);
+      setMarsWeather(weather);
+    });
+    loadSpaceWeather().then((space) => {
+      if (cancelled) return;
+      radiationRef.current = radiationEffects(space);
+      setSpaceWeather(space);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   // Random world events (dust storms), driven by an async loop in systems/events.js.
   useEffect(() => {
     const events = startRandomEvents({
-      canTrigger: () => !blockedRef.current && roverIntroRef.current,
+      canTrigger: () =>
+        !blockedRef.current && roverIntroRef.current && !SHELTERED_LOCATIONS.has(locationRef.current),
+      getGapMs: () => weatherRef.current.stormGapMs,
+      canRun: (event) => event.id !== "radiation" || Boolean(radiationRef.current),
       onStart: (event) => {
-        speedMultRef.current = event.speedMultiplier;
         setStorm(event);
         flashNotice(event.warning);
       },
       onEnd: (event) => {
-        speedMultRef.current = 1;
         setStorm(null);
-        flashNotice(event.clear);
+        if (!SHELTERED_LOCATIONS.has(locationRef.current)) flashNotice(event.clear);
       },
     });
     stormTriggerRef.current = events.trigger;
@@ -660,6 +698,25 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
       speedMultRef.current = 1;
     };
   }, []);
+
+  // Storms and radiation only affect Hugh while he's outside the volcano.
+  const stormHere = Boolean(storm) && !SHELTERED_LOCATIONS.has(locationId);
+  useEffect(() => {
+    speedMultRef.current = stormHere ? storm.speedMultiplier : 1;
+    if (!stormHere) return;
+    const isRadiation = storm.id === "radiation";
+    // Radiation is normally only possible with real flare data; the dev trigger falls back to mild values.
+    const radiation = radiationRef.current ?? { damage: 1, tickMs: 3000 };
+    const stormDamage = isRadiation ? radiation.damage : weatherRef.current.stormDamage;
+    const stormTickMs = isRadiation ? radiation.tickMs : weatherRef.current.stormTickMs;
+    const id = window.setInterval(() => {
+      if (blockedRef.current || healthRef.current <= WEATHER_MIN_HEALTH) return;
+      lastHurtRef.current = Date.now(); // no regen while caught in the storm
+      healthRef.current = Math.max(WEATHER_MIN_HEALTH, healthRef.current - stormDamage);
+      setHealth(healthRef.current);
+    }, stormTickMs);
+    return () => window.clearInterval(id);
+  }, [stormHere, storm]);
 
   function defeatBoss() {
     setBossDefeated(true);
@@ -1297,7 +1354,18 @@ export default function Base({ onMainMenu, onSave, saveError, savedGame = {} }) 
           paused={movementBlocked}
         />
       )}
-      {storm && <WindStorm />}
+      {stormHere && storm.id === "dustStorm" && <WindStorm blowLeft={weatherRef.current.stormBlowsLeft} />}
+      {stormHere && storm.id === "radiation" && <div aria-hidden="true" className="radiation-overlay" />}
+      {(marsWeather || spaceWeather) && (
+        <div className="mars-weather-badge">
+          {marsWeather && (
+            <p title="Real readings from NASA's InSight lander, Elysium Planitia">{weatherLabel(marsWeather)}</p>
+          )}
+          {spaceWeather && (
+            <p title="Live solar flare data from NASA DONKI (last 3 days)">{spaceWeatherLabel(spaceWeather)}</p>
+          )}
+        </div>
+      )}
       {showVictory && (
         <div className="boss-victory" role="status">
           <div>ALPHA ZENO DEFEATED!<br />MARS IS YOURS, HUGH MANN.<br />NOW GEAUX HOME!</div>
