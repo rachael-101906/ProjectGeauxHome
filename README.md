@@ -27,3 +27,5 @@ While we're not Mars connoisseurs just yet, we learned a great deal about the ge
 
 ## What's next for Project Geaux Home
 We plan to add more cutscenes and integrate a more intensive storyline into the system in order to produce a full-scale video game for all audiences, Martian or Earthling!
+
+This project was developed with assistance from AI tools for brainstorming, code generation, debugging, and commit message creation.
